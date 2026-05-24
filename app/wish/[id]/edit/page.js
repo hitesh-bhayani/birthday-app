@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Palette, Image, Music, Settings, Save, Upload, Trash2,
   Plus, X, CheckCircle, AlertCircle, LogOut, ExternalLink,
-  User, MessageSquare, Users, Play, Pause, Lock, Eye, EyeOff
+  User, MessageSquare, Users, Play, Pause, Lock, Eye, EyeOff,
+  Camera, Mic, Square, RefreshCw, Radio
 } from "lucide-react";
 import { getTheme } from "../../../utils/themes";
 
@@ -84,7 +85,153 @@ export default function WishEditPage() {
   const musicInputRef = useRef(null);
   const voiceInputRef = useRef(null);
 
+  // 📸 Camera State
+  const [cameraActive, setCameraActive] = useState(false);
+  const [cameraStream, setCameraStream] = useState(null);
+  const [cameraFacing, setCameraFacing] = useState("user");
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // 🎤 Audio Recorder State
+  const [recordingActive, setRecordingActive] = useState(false);
+  const [recDuration, setRecDuration] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
+  const recTimerRef = useRef(null);
+
   const showToast = (message, type = "success") => setToast({ message, type });
+
+  // ── Camera Handlers ──────────────────────────────────────────────────────────
+  const startCamera = async () => {
+    try {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+      }
+      setCameraActive(true);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: cameraFacing },
+        audio: false
+      });
+      setCameraStream(stream);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      console.error("Camera access failed:", err);
+      showToast("Camera access denied or unavailable", "error");
+      setCameraActive(false);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(t => t.stop());
+    }
+    setCameraStream(null);
+    setCameraActive(false);
+  };
+
+  const toggleCameraFacing = () => {
+    const nextFacing = cameraFacing === "user" ? "environment" : "user";
+    setCameraFacing(nextFacing);
+    // Restart camera with new facing mode
+    if (cameraActive) {
+      setTimeout(() => {
+        startCamera();
+      }, 150);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    // Match canvas size to video frame
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Draw frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Export to blob
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      
+      const file = new File([blob], `captured_${Date.now()}.jpg`, { type: "image/jpeg" });
+      await handlePhotoUpload([file]);
+      stopCamera();
+    }, "image/jpeg", 0.9);
+  };
+
+  // ── Voice Recorder Handlers ─────────────────────────────────────────────────
+  const startRecording = async () => {
+    setAudioChunks([]);
+    setRecDuration(0);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      
+      const chunks = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        // Stop all media tracks to release microphone
+        stream.getTracks().forEach(t => t.stop());
+        
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        const file = new File([blob], "voice.mp3", { type: "audio/webm" });
+        
+        await handleVoiceUpload(file);
+      };
+
+      recorder.start();
+      setRecordingActive(true);
+      
+      // Start recording timer
+      recTimerRef.current = setInterval(() => {
+        setRecDuration(d => d + 1);
+      }, 1000);
+
+    } catch (err) {
+      console.error("Mic access failed:", err);
+      showToast("Microphone access denied or unavailable", "error");
+    }
+  };
+
+  const stopRecording = (shouldSave) => {
+    if (recTimerRef.current) {
+      clearInterval(recTimerRef.current);
+    }
+    
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      if (shouldSave) {
+        mediaRecorder.stop();
+      } else {
+        // Stop without saving
+        mediaRecorder.ondataavailable = null;
+        mediaRecorder.stop();
+        // Stop tracks
+        mediaRecorder.stream.getTracks().forEach(t => t.stop());
+        showToast("Recording discarded");
+      }
+    }
+    setRecordingActive(false);
+  };
+
+  // Cleanup media streams on unmount
+  useEffect(() => {
+    return () => {
+      if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      if (recTimerRef.current) clearInterval(recTimerRef.current);
+    };
+  }, [cameraStream]);
 
   const getCardPassword = () => {
     return typeof window !== "undefined" ? sessionStorage.getItem(`edit_password_${cardId}`) || "" : "";
@@ -412,50 +559,108 @@ export default function WishEditPage() {
 
           {tab === "photos" && (
             <motion.div key="photos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-              <Card title="Upload Photos" icon={Upload}>
-                <div
-                  onClick={() => photoInputRef.current?.click()}
-                  onDragOver={e => e.preventDefault()}
-                  onDrop={e => { e.preventDefault(); handlePhotoUpload(e.dataTransfer.files); }}
-                  className="border-2 border-dashed border-white/20 rounded-2xl p-10 text-center cursor-pointer hover:border-pink-500/50 hover:bg-pink-500/5 transition-all"
-                >
-                  <Upload className="mx-auto mb-3 text-gray-400" size={32} />
-                  <p className="text-white font-medium mb-1">{uploading ? "Uploading..." : "Drop photos here or click to browse"}</p>
-                  <p className="text-xs text-gray-500">JPG, PNG, WEBP, HEIC supported</p>
-                  <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handlePhotoUpload(e.target.files)} />
+              <Card title="Add Photos" icon={Upload}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* File Upload Zone */}
+                  <div
+                    onClick={() => photoInputRef.current?.click()}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => { e.preventDefault(); handlePhotoUpload(e.dataTransfer.files); }}
+                    className="border-2 border-dashed border-white/20 rounded-2xl p-8 text-center cursor-pointer hover:border-pink-500/50 hover:bg-pink-500/5 transition-all flex flex-col items-center justify-center min-h-[160px]"
+                  >
+                    <Upload className="mb-2 text-gray-400" size={28} />
+                    <p className="text-white font-medium text-sm mb-0.5">{uploading ? "Uploading..." : "Browse or Drop Photos"}</p>
+                    <p className="text-[10px] text-gray-500">JPG, PNG, WEBP, HEIC supported</p>
+                    <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={e => handlePhotoUpload(e.target.files)} />
+                  </div>
+
+                  {/* Camera Trigger Zone */}
+                  {!cameraActive ? (
+                    <div
+                      onClick={startCamera}
+                      className="border-2 border-dashed border-white/20 rounded-2xl p-8 text-center cursor-pointer hover:border-pink-500/50 hover:bg-pink-500/5 transition-all flex flex-col items-center justify-center min-h-[160px]"
+                    >
+                      <Camera className="mb-2 text-pink-400 animate-pulse" size={28} />
+                      <p className="text-white font-medium text-sm mb-0.5">Take Photo with Camera</p>
+                      <p className="text-[10px] text-gray-500">Capture frame directly from webcam/mobile camera</p>
+                    </div>
+                  ) : (
+                    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-black/60 p-2 flex flex-col items-center justify-center min-h-[160px]">
+                      <video ref={videoRef} autoPlay playsInline className="w-full aspect-video rounded-xl object-cover bg-black" />
+                      <canvas ref={canvasRef} className="hidden" />
+
+                      {/* Camera Action Buttons Overlay */}
+                      <div className="flex gap-2 mt-2 w-full">
+                        <button
+                          type="button"
+                          onClick={capturePhoto}
+                          className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-pink-500 to-purple-600 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md"
+                        >
+                          <Camera size={12} /> Capture
+                        </button>
+                        <button
+                          type="button"
+                          onClick={toggleCameraFacing}
+                          className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-300 transition-colors"
+                          title="Switch Camera"
+                        >
+                          <RefreshCw size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={stopCamera}
+                          className="p-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-400 transition-colors"
+                          title="Cancel"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Card>
 
               <Card title={`Gallery Photos (${images.length})`} icon={Image}>
-                <Field label="Set Hero Image (shown on Landing page)">
-                  <select className={inputClass} value={config.heroImagePath || ""} onChange={e => updateField("heroImagePath", e.target.value)}>
-                    {images.map(src => (
-                      <option key={src} value={src}>{src.split("/").pop()}</option>
-                    ))}
-                  </select>
-                </Field>
+                {images.length > 0 ? (
+                  <>
+                    <Field label="Set Hero Image (shown on Landing page)">
+                      <select className={inputClass} value={config.heroImagePath || ""} onChange={e => updateField("heroImagePath", e.target.value)}>
+                        <option value="">-- Select Hero Photo --</option>
+                        {images.map(src => (
+                          <option key={src} value={src}>{src.split("/").pop()}</option>
+                        ))}
+                      </select>
+                    </Field>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
-                  {images.map(src => (
-                    <div key={src} className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${config.heroImagePath === src ? "border-pink-500 animate-pulse" : "border-transparent hover:border-white/20"}`}
-                      onClick={() => updateField("heroImagePath", src)}>
-                      <img src={src} alt="" className="w-full aspect-square object-cover" />
-                      {config.heroImagePath === src && (
-                        <div className="absolute top-2 left-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">HERO</div>
-                      )}
-                      <button
-                        onClick={e => { e.stopPropagation(); handleDeletePhoto(src); }}
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-400 text-white p-1.5 rounded-full transition-all"
-                      >
-                        <Trash2 size={12} />
-                      </button>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
+                      {images.map(src => (
+                        <div key={src} className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${config.heroImagePath === src ? "border-pink-500 animate-pulse" : "border-transparent hover:border-white/20"}`}
+                          onClick={() => updateField("heroImagePath", src)}>
+                          <img src={src} alt="" className="w-full aspect-square object-cover" />
+                          {config.heroImagePath === src && (
+                            <div className="absolute top-2 left-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">HERO</div>
+                          )}
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDeletePhoto(src); }}
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-400 text-white p-1.5 rounded-full transition-all"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
 
-                <button onClick={handleSave} disabled={saving} className="mt-6 w-full py-3.5 rounded-2xl font-bold text-white bg-gradient-to-r from-pink-500 to-purple-600 transition-all flex items-center justify-center gap-3">
-                  <Save size={16} /> {saving ? "Saving Selection..." : "Save Image Setup"}
-                </button>
+                    <button onClick={handleSave} disabled={saving} className="mt-6 w-full py-3.5 rounded-2xl font-bold text-white bg-gradient-to-r from-pink-500 to-purple-600 transition-all flex items-center justify-center gap-3">
+                      <Save size={16} /> {saving ? "Saving Selection..." : "Save Image Setup"}
+                    </button>
+                  </>
+                ) : (
+                  <div className="text-center py-10 text-gray-500 text-sm border border-dashed border-white/10 rounded-2xl">
+                    <Camera className="mx-auto mb-2 text-gray-600" size={32} />
+                    <p className="font-semibold text-gray-400 mb-0.5">No Photos in Gallery</p>
+                    <p className="text-xs text-gray-500 max-w-xs mx-auto">Upload files or take pictures with your device's camera above to get started!</p>
+                  </div>
+                )}
               </Card>
             </motion.div>
           )}
@@ -511,14 +716,62 @@ export default function WishEditPage() {
                     </div>
                   </div>
                 )}
-                <div
-                  onClick={() => voiceInputRef.current?.click()}
-                  className="border-2 border-dashed border-white/20 rounded-2xl p-8 text-center cursor-pointer hover:border-pink-500/50 hover:bg-pink-500/5 transition-all"
-                >
-                  <Upload className="mx-auto mb-2 text-gray-400" size={28} />
-                  <p className="text-white font-medium mb-1">{uploading ? "Uploading..." : "Click to browse voice recording file"}</p>
-                  <p className="text-xs text-gray-500">MP3, M4A, WAV, AAC formats</p>
-                  <input ref={voiceInputRef} type="file" accept="audio/*" className="hidden" onChange={e => handleVoiceUpload(e.target.files[0])} />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* File Upload Zone */}
+                  <div
+                    onClick={() => voiceInputRef.current?.click()}
+                    className="border-2 border-dashed border-white/20 rounded-2xl p-6 text-center cursor-pointer hover:border-pink-500/50 hover:bg-pink-500/5 transition-all flex flex-col items-center justify-center min-h-[140px]"
+                  >
+                    <Upload className="mb-2 text-gray-400" size={24} />
+                    <p className="text-white font-medium text-xs mb-0.5">Click to browse audio file</p>
+                    <p className="text-[10px] text-gray-500">MP3, M4A, WAV, AAC formats</p>
+                    <input ref={voiceInputRef} type="file" accept="audio/*" className="hidden" onChange={e => handleVoiceUpload(e.target.files[0])} />
+                  </div>
+
+                  {/* Mic Recording Zone */}
+                  {!recordingActive ? (
+                    <div
+                      onClick={startRecording}
+                      className="border-2 border-dashed border-white/20 rounded-2xl p-6 text-center cursor-pointer hover:border-pink-500/50 hover:bg-pink-500/5 transition-all flex flex-col items-center justify-center min-h-[140px]"
+                    >
+                      <Mic className="mb-2 text-pink-400 animate-pulse" size={24} />
+                      <p className="text-white font-medium text-xs mb-0.5">Record Voice in Browser</p>
+                      <p className="text-[10px] text-gray-500">Speak into device mic to capture greeting directly</p>
+                    </div>
+                  ) : (
+                    <div className="relative rounded-2xl border border-pink-500/30 bg-pink-500/5 p-4 flex flex-col items-center justify-center min-h-[140px]">
+                      {/* Pulsing indicator */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+                        <Radio size={16} className="text-red-400 animate-pulse" />
+                        <span className="text-xs font-bold text-red-400 uppercase tracking-widest">RECORDING</span>
+                      </div>
+                      
+                      {/* Timer */}
+                      <div className="text-2xl font-bold text-white mb-4 font-mono">
+                        {Math.floor(recDuration / 60).toString().padStart(2, "0")}:{Math.floor(recDuration % 60).toString().padStart(2, "0")}
+                      </div>
+
+                      {/* Action Controls */}
+                      <div className="flex gap-2 w-full">
+                        <button
+                          type="button"
+                          onClick={() => stopRecording(true)}
+                          className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-red-500 to-pink-600 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md"
+                        >
+                          <Square size={10} fill="white" /> Save & Upload
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => stopRecording(false)}
+                          className="px-3 py-2 rounded-xl text-xs font-bold bg-white/5 hover:bg-white/10 text-gray-300 transition-colors"
+                        >
+                          Discard
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Card>
             </motion.div>

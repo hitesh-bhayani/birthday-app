@@ -164,7 +164,7 @@ function CreateWizardInner() {
         cardId: cleanId,
         editPassword: password,
         signers: signers.filter(s => s.name.trim() !== ""),
-        heroImagePath: "/original_images/PREM2902.JPG", // Default fallback
+        heroImagePath: "", // Starts empty so they can choose their own
         musicPath: "/birthday-music.mp3" // Default fallback
       };
 

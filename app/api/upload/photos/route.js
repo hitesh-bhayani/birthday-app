@@ -1,6 +1,6 @@
 // app/api/upload/photos/route.js
-import { writeFileSync, mkdirSync } from "fs";
-import { join } from "path";
+import { writeFileSync, mkdirSync, existsSync } from "fs";
+import { join, parse } from "path";
 
 export const config = { api: { bodyParser: false } };
 
@@ -31,9 +31,22 @@ export async function POST(request) {
     const saved = [];
     for (const file of files) {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      writeFileSync(join(dir, filename), buffer);
-      saved.push(`${publicPrefix}/${filename}`);
+      
+      // Clean and sanitize base name
+      const originalCleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const parsed = parse(originalCleanName);
+      
+      let finalFilename = originalCleanName;
+      let counter = 1;
+
+      // Proper dynamic duplicate checking: rename to name_1.ext, name_2.ext if it already exists
+      while (existsSync(join(dir, finalFilename))) {
+        finalFilename = `${parsed.name}_${counter}${parsed.ext}`;
+        counter++;
+      }
+
+      writeFileSync(join(dir, finalFilename), buffer);
+      saved.push(`${publicPrefix}/${finalFilename}`);
     }
 
     return Response.json({ success: true, saved });

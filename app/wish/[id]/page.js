@@ -248,15 +248,15 @@ export default function DynamicWishPage() {
               className="relative z-10 flex flex-col items-center w-full max-w-2xl px-4 py-6 md:px-6 md:py-12"
             >
               {/* Recipient Image */}
-              {config.heroImagePath && (
-                <motion.div
-                  whileHover={{ scale: 1.02, rotate: -1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className="relative group mb-6 md:mb-10"
-                >
-                  <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-70 blur-md transition duration-1000 group-hover:opacity-100 group-hover:duration-200" />
-                  <div className="relative rounded-xl border border-white/10 bg-black/50 p-2 shadow-2xl backdrop-blur-sm">
-                    <div className="overflow-hidden rounded-lg">
+              <motion.div
+                whileHover={{ scale: 1.02, rotate: -1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative group mb-6 md:mb-10"
+              >
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 opacity-70 blur-md transition duration-1000 group-hover:opacity-100 group-hover:duration-200" />
+                <div className="relative rounded-xl border border-white/10 bg-black/50 p-2 shadow-2xl backdrop-blur-sm">
+                  <div className="overflow-hidden rounded-lg flex items-center justify-center bg-white/3">
+                    {config.heroImagePath ? (
                       <Image
                         src={config.heroImagePath}
                         alt={config.recipientName || "Surprise"}
@@ -265,10 +265,25 @@ export default function DynamicWishPage() {
                         className="w-48 h-48 md:w-80 md:h-80 aspect-square object-cover transition-transform duration-700 group-hover:scale-105"
                         priority
                       />
-                    </div>
+                    ) : (
+                      <div className="w-48 h-48 md:w-80 md:h-80 flex items-center justify-center p-8 bg-black/25">
+                        {config.occasion === "anniversary" || config.occasion === "engagement" ? (
+                          <Heart className="w-24 h-24 md:w-36 md:h-36 text-pink-500 fill-pink-500/20 animate-pulse" />
+                        ) : config.occasion === "mother-day" ? (
+                          <Sparkles className="w-24 h-24 md:w-36 md:h-36 text-pink-400 animate-pulse" />
+                        ) : config.occasion === "father-day" ? (
+                          <Star className="w-24 h-24 md:w-36 md:h-36 text-amber-400 fill-amber-500/20 animate-pulse" />
+                        ) : config.occasion === "wedding" ? (
+                          <Heart className="w-24 h-24 md:w-36 md:h-36 text-yellow-500 fill-yellow-500/20 animate-pulse" />
+                        ) : (
+                          // birthday
+                          <Sparkles className="w-24 h-24 md:w-36 md:h-36 text-purple-400 animate-pulse" />
+                        )}
+                      </div>
+                    )}
                   </div>
-                </motion.div>
-              )}
+                </div>
+              </motion.div>
 
               {/* Typography Section */}
               <div className="text-center mb-6 md:mb-10 space-y-2 md:space-y-4">
