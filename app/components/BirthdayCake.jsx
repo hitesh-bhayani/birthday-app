@@ -327,7 +327,7 @@ export default function BirthdayCake({ onBlow }) {
     // Default Cake
     return (
       <div 
-        onClick={handleCakeTap}
+        onClick={handleGlobalTap}
         className="relative cursor-pointer flex flex-col items-center mt-6"
       >
         {/* Candles Container */}
@@ -340,7 +340,7 @@ export default function BirthdayCake({ onBlow }) {
                 className="relative flex flex-col items-center justify-end h-24 w-6"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleBlowCandle(index);
+                  handleAction(index);
                 }}
               >
                 {/* Flame */}
