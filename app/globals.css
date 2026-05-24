@@ -1,55 +1,31 @@
-/* app/globals.css */
+@import "tailwindcss";
 
-/* CSS Reset */
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --animate-shimmer: shimmer 3s linear infinite;
+  
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @keyframes wave {
+    0% { transform: scaleY(0.4); }
+    100% { transform: scaleY(1.2); }
+  }
 }
 
-html {
-  scroll-behavior: smooth;
-  font-family: 'Inter', sans-serif;
-  /* HSL color palette */
-  --color-primary: 210 40% 55%; /* blue-ish */
-  --color-accent: 340 60% 55%;  /* pink */
-  --color-bg: 220 20% 12%;
-  --color-bg-dark: 220 20% 10%;
-  --color-text: 0 0% 100%;
-}
-
-body {
-  background: hsl(var(--color-bg));
-  color: hsl(var(--color-text));
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Dark mode */
-.dark {
-  --color-bg: var(--color-bg-dark);
-}
-
-/* Utility classes */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-
-h1, h2, h3, h4, h5, h6 {
-  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-}
-
-/* Reduce motion for users who prefer it */
+/* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.001ms !important;
-    transition-duration: 0.001ms !important;
+  *,
+  ::before,
+  ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
     scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
   }
 }
