@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { playPartyPopperSound } from "../utils/audioFX";
 import FireworksFinale from "./FireworksFinale";
+import { useConfig } from "../context/ConfigContext";
 
 export default function GiftBox({ onOpen }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showMessage, setShowMessage] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
+  const config = useConfig();
 
   const handleDragEnd = (event, info) => {
     // Open if dragged upwards or significantly to the side
@@ -120,7 +122,7 @@ export default function GiftBox({ onOpen }) {
                 className="absolute -top-32 left-1/2 -translate-x-1/2 w-max max-w-[90vw] text-center z-40 pointer-events-none bg-black/60 backdrop-blur-md px-6 py-4 rounded-2xl border border-white/20 shadow-[0_0_40px_rgba(0,0,0,0.8)]"
               >
                 <h3 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-t from-yellow-200 to-white drop-shadow-lg">
-                  Wishing you endless joy & health!
+                  {config.giftBoxMessage || "Wishing you endless joy & health!"}
                 </h3>
               </motion.div>
             )}

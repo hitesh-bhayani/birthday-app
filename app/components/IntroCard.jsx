@@ -3,12 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, Play, Pause } from "lucide-react";
+import { useConfig } from "../context/ConfigContext";
 
 export default function IntroCard({ onStart }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [isVoicePlaying, setIsVoicePlaying] = useState(false);
   const [voiceNoteUrl, setVoiceNoteUrl] = useState(null);
   const voiceAudioRef = useRef(null);
+  const config = useConfig();
 
   // Check if a voice note recording exists
   useEffect(() => {
@@ -118,7 +120,7 @@ export default function IntroCard({ onStart }) {
           >
             <h1 className="text-2xl md:text-5xl font-extrabold mb-4 md:mb-10 tracking-tight print-text-accent">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-rose-300 to-indigo-400 drop-shadow-lg print-text-accent">
-                Happy 70th Birthday!
+                {config.wishCardTitle || "Happy 70th Birthday!"}
               </span>
             </h1>
           </motion.div>
@@ -130,29 +132,37 @@ export default function IntroCard({ onStart }) {
             className="mb-4 md:mb-8 space-y-3 md:space-y-6 relative z-10"
           >
             <motion.p variants={itemVariants} className="text-xs md:text-lg text-gray-200 font-light leading-relaxed print-text-dark tracking-wide">
-              Seven decades of incredible stories, boundless wisdom, and a heart that has touched so many lives. Your presence has always been our greatest comfort.
+              {config.wishCardBody1 || "Seven decades of incredible stories..."}
             </motion.p>
             <motion.p variants={itemVariants} className="text-xs md:text-lg text-gray-200 font-light leading-relaxed print-text-dark tracking-wide">
-              You have built a legacy of love and unwavering kindness. Know that you are deeply cherished — not just for what you have done, but for the beautiful person you are.
+              {config.wishCardBody2 || "You have built a legacy of love..."}
             </motion.p>
             <motion.div variants={itemVariants} className="mt-2 md:mt-6">
               <div className="w-16 md:w-24 h-[1px] bg-gradient-to-r from-transparent via-pink-400 to-transparent mx-auto mb-3 opacity-50 no-print" />
               <p className="text-xs md:text-base text-pink-300 font-serif italic mb-3">
-                Here's to many more sweet memories to come.
+                {config.wishCardClosing || "Here's to many more sweet memories to come."}
               </p>
               {/* Name chips */}
               <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">With all our love</p>
               <div className="flex flex-wrap justify-center gap-2">
-                {[
-                  { name: "Jhankar", role: "Daughter", color: "from-pink-500/20 to-rose-500/20 border-pink-500/30 text-pink-300" },
-                  { name: "Hitesh", role: "Son-in-law", color: "from-purple-500/20 to-indigo-500/20 border-purple-500/30 text-purple-300" },
-                  { name: "Dhruv", role: "Grandson", color: "from-yellow-500/20 to-orange-500/20 border-yellow-500/30 text-yellow-300" },
-                ].map(({ name, role, color }) => (
-                  <div key={name} className={`flex flex-col items-center px-4 py-2 rounded-2xl border bg-gradient-to-br ${color} backdrop-blur-sm`}>
-                    <span className="font-bold text-sm md:text-base tracking-wide">{name}</span>
-                    <span className="text-[10px] md:text-xs opacity-60 font-light">{role}</span>
-                  </div>
-                ))}
+                {(config.signers || [
+                  { name: "Jhankar", role: "Daughter" },
+                  { name: "Hitesh", role: "Son-in-law" },
+                  { name: "Dhruv", role: "Grandson" },
+                ]).map(({ name, role }, idx) => {
+                  const colors = [
+                    "from-pink-500/20 to-rose-500/20 border-pink-500/30 text-pink-300",
+                    "from-purple-500/20 to-indigo-500/20 border-purple-500/30 text-purple-300",
+                    "from-yellow-500/20 to-orange-500/20 border-yellow-500/30 text-yellow-300",
+                  ];
+                  const color = colors[idx % colors.length];
+                  return (
+                    <div key={name} className={`flex flex-col items-center px-4 py-2 rounded-2xl border bg-gradient-to-br ${color} backdrop-blur-sm`}>
+                      <span className="font-bold text-sm md:text-base tracking-wide">{name}</span>
+                      <span className="text-[10px] md:text-xs opacity-60 font-light">{role}</span>
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>

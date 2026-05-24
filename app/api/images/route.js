@@ -1,6 +1,6 @@
 // app/api/images/route.js
 import { NextResponse } from 'next/server';
-import { readdir } from 'fs/promises';
+import { readdir, unlink } from 'fs/promises';
 import { join } from 'path';
 
 export async function GET() {
@@ -16,3 +16,19 @@ export async function GET() {
     return NextResponse.json([], { status: 500 });
   }
 }
+
+export async function DELETE(request) {
+  try {
+    const { filename } = await request.json();
+    if (!filename || filename.includes('..')) {
+      return NextResponse.json({ error: 'Invalid filename' }, { status: 400 });
+    }
+    const filePath = join(process.cwd(), 'public', 'original_images', filename);
+    await unlink(filePath);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    return NextResponse.json({ error: 'Delete failed' }, { status: 500 });
+  }
+}
+

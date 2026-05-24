@@ -1,10 +1,15 @@
 // app/layout.js
 import './globals.css';
+import { ConfigProvider } from './context/ConfigContext';
 
 export const metadata = {
   title: "Happy 70th Birthday!",
   description: "A special digital experience celebrating 70 incredible years. Handcrafted with love.",
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }) {
@@ -24,7 +29,9 @@ export default function RootLayout({ children }) {
         <meta property="og:url" content="http://localhost:3000" />
       </head>
       <body className="bg-gray-900 text-white font-sans min-h-screen flex flex-col">
-        {children}
+        <ConfigProvider>
+          {children}
+        </ConfigProvider>
       </body>
     </html>
   );

@@ -11,6 +11,7 @@ import BirthdayCake from "./components/BirthdayCake";
 import GiftBox from "./components/GiftBox";
 import Gallery from "./components/Gallery";
 import StarField from "./components/StarField";
+import { useConfig } from "./context/ConfigContext";
 
 export default function Home() {
   const [step, setStep] = useState("gateway");
@@ -18,6 +19,7 @@ export default function Home() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const audioRef = useRef(null);
+  const config = useConfig();
 
   useEffect(() => {
     setMounted(true);
@@ -121,7 +123,7 @@ export default function Home() {
       {/* Invisible Native Audio Player */}
       <audio 
         ref={audioRef}
-        src="/birthday-music.mp3"
+        src={config.musicPath || "/birthday-music.mp3"}
         loop
       />
 
@@ -270,7 +272,7 @@ export default function Home() {
                 <div className="relative rounded-xl border border-white/10 bg-black/50 p-2 shadow-2xl backdrop-blur-sm">
                   <div className="overflow-hidden rounded-lg">
                     <Image
-                      src="/original_images/PREM2902.JPG"
+                      src={config.heroImagePath || "/original_images/PREM2902.JPG"}
                       alt="Birthday Celebration"
                       width={320}
                       height={320}
@@ -300,7 +302,7 @@ export default function Home() {
                   className="text-4xl md:text-6xl font-extrabold tracking-tight"
                 >
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 drop-shadow-sm">
-                    Happy Birthday
+                    {config.landingTitle || "Happy Birthday"}
                   </span>
                 </motion.h1>
                 <motion.p 
@@ -309,7 +311,7 @@ export default function Home() {
                   transition={{ delay: 0.7, duration: 0.8 }}
                   className="text-base md:text-xl text-gray-400 max-w-lg mx-auto font-light leading-relaxed px-4"
                 >
-                  Get ready to experience a personalized journey full of memories, joy, and a few surprises.
+                  {config.landingSubtitle || "Get ready to experience a personalized journey full of memories, joy, and a few surprises."}
                 </motion.p>
               </div>
 

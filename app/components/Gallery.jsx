@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import { ChevronRight, ChevronLeft, X, Play, Pause, Maximize, Share2 } from "lucide-react";
 import { playPartyPopperSound } from "../utils/audioFX";
+import { useConfig } from "../context/ConfigContext";
 
 export default function Gallery() {
   const [images, setImages] = useState([]);
   const [isSlideshow, setIsSlideshow] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const config = useConfig();
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -191,10 +193,10 @@ export default function Gallery() {
           ✨ The Best is Yet to Come
         </span>
         <h2 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-indigo-400 mb-4 tracking-tight">
-          Happy 70th Birthday!
+          {config.galleryTitle || "Happy 70th Birthday!"}
         </h2>
         <p className="text-lg text-gray-300 font-light leading-relaxed">
-          A lifetime of memories, and so many more to make. Thank you for being you.
+          {config.gallerySubtitle || "A lifetime of memories, and so many more to make. Thank you for being you."}
         </p>
       </motion.div>
 
