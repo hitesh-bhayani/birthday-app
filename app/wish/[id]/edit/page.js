@@ -472,6 +472,19 @@ IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax
     }
   };
 
+  const handleExportJson = () => {
+    if (!config) return;
+    const { editPassword, adminPassword, ...safeConfig } = config;
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(safeConfig, null, 2));
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `${cardId}_celebration_config.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+    showToast("Baseline JSON configuration downloaded!");
+  };
+
   const handleMusicUpload = async (file) => {
     if (!file) return;
     setUploading(true);
@@ -967,6 +980,20 @@ IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax
                   Use your favorite AI (Gemini, Claude, ChatGPT, etc.) to write highly personalized, emotionally resonant greeting card messages! 
                   Just answer a few facts below, copy the prompt, and upload/paste the AI's generated response to instantly auto-fill all text fields.
                 </p>
+
+                <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-white">Export & Refine Existing Data</p>
+                    <p className="text-xs text-gray-400 mt-1 max-w-md">Download your current card data as a JSON file, share it with the AI, and ask it to refine/translate the text before importing it back!</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExportJson}
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold text-pink-300 border border-pink-500/30 bg-pink-500/10 hover:bg-pink-500 hover:text-white transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-md shrink-0"
+                  >
+                    <Save size={14} /> Export Card JSON
+                  </button>
+                </div>
 
                 <div className="space-y-4">
                   {/* Step 1: Input bullet points */}
