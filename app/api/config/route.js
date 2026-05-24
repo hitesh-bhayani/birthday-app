@@ -1,47 +1,96 @@
 // app/api/config/route.js
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 
-const CONFIG_PATH = join(process.cwd(), "birthday.config.json");
+const DATA_DIR = join(process.cwd(), "data", "wishes");
+const FALLBACK_CONFIG_PATH = join(process.cwd(), "birthday.config.json");
 
-function readConfig() {
-  return JSON.parse(readFileSync(CONFIG_PATH, "utf-8"));
+// Ensure the directory exists
+if (!existsSync(DATA_DIR)) {
+  mkdirSync(DATA_DIR, { recursive: true });
 }
 
-export async function GET() {
+function getFilePath(cardId) {
+  if (!cardId || cardId === "default") {
+    return FALLBACK_CONFIG_PATH;
+  }
+  // Sanitize cardId to prevent directory traversal
+  const safeId = cardId.replace(/[^a-zA-Z0-9_-]/g, "");
+  return join(DATA_DIR, `${safeId}.json`);
+}
+
+function readConfig(cardId) {
+  const path = getFilePath(cardId);
+  if (!existsSync(path)) {
+    return null;
+  }
+  return JSON.parse(readFileSync(path, "utf-8"));
+}
+
+export async function GET(request) {
   try {
-    const config = readConfig();
-    // Never expose the admin password to the frontend
-    const { adminPassword, ...safeConfig } = config;
+    const { searchParams } = new URL(request.url);
+    const cardId = searchParams.get("cardId");
+    
+    const config = readConfig(cardId);
+    if (!config) {
+      return Response.json({ error: "Wish card not found" }, { status: 404 });
+    }
+
+    // Never expose the password to the frontend client
+    const { editPassword, adminPassword, ...safeConfig } = config;
     return Response.json(safeConfig);
-  } catch {
+  } catch (error) {
+    console.error("Config GET error:", error);
     return Response.json({ error: "Failed to read config" }, { status: 500 });
   }
 }
 
 export async function POST(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const cardId = searchParams.get("cardId");
     const password = request.headers.get("x-admin-password");
-    const config = readConfig();
 
-    if (password !== config.adminPassword) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const path = getFilePath(cardId);
+    let existing = readConfig(cardId);
+
+    // If card doesn't exist, we allow creation (without password)
+    // The editPassword will be set inside the request body on first save.
+    const isNew = !existing;
 
     const body = await request.json();
 
-    // Merge update into existing config, preserving adminPassword
-    const updated = { ...config, ...body, adminPassword: config.adminPassword };
-
-    // If changing password, allow it via explicit field
-    if (body.newAdminPassword && body.newAdminPassword.length >= 6) {
-      updated.adminPassword = body.newAdminPassword;
+    if (!isNew) {
+      const activePassword = existing.editPassword || existing.adminPassword || "birthday2024";
+      if (password !== activePassword) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
-    delete updated.newAdminPassword;
 
-    writeFileSync(CONFIG_PATH, JSON.stringify(updated, null, 2), "utf-8");
-    return Response.json({ success: true });
-  } catch {
+    // Merge updates
+    const updated = {
+      ...existing,
+      ...body,
+      cardId: cardId || "default",
+    };
+
+    // Prevent stripping the password if it's not provided in the request body
+    if (!body.editPassword && existing) {
+      updated.editPassword = existing.editPassword || existing.adminPassword || "birthday2024";
+    }
+
+    // Support updating password explicitly
+    if (body.newEditPassword && body.newEditPassword.length >= 4) {
+      updated.editPassword = body.newEditPassword;
+    }
+    delete updated.newEditPassword;
+    delete updated.adminPassword; // Standardize on editPassword
+
+    writeFileSync(path, JSON.stringify(updated, null, 2), "utf-8");
+    return Response.json({ success: true, cardId: updated.cardId });
+  } catch (error) {
+    console.error("Config POST error:", error);
     return Response.json({ error: "Failed to save config" }, { status: 500 });
   }
 }

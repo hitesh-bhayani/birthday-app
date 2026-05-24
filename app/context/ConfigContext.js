@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
 const DEFAULT_CONFIG = {
+  occasion: "birthday",
   recipientName: "Mummy",
   age: 70,
   heroImagePath: "/original_images/PREM2902.JPG",
@@ -26,17 +27,42 @@ const DEFAULT_CONFIG = {
 const ConfigContext = createContext(DEFAULT_CONFIG);
 
 export function ConfigProvider({ children }) {
-  const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [config, setConfig] = useState(null);
 
   useEffect(() => {
-    fetch("/api/config")
-      .then((r) => r.json())
-      .then((data) => setConfig({ ...DEFAULT_CONFIG, ...data }))
-      .catch(() => {}); // silently fall back to defaults
+    if (typeof window === "undefined") return;
+
+    // Detect cardId from path /wish/[id] or /wish/[id]/edit or query search ?cardId=xxx
+    const pathname = window.location.pathname;
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    let cardId = searchParams.get("cardId");
+    
+    if (!cardId) {
+      const match = pathname.match(/\/wish\/([a-zA-Z0-9_-]+)/);
+      if (match) {
+        cardId = match[1];
+      }
+    }
+
+    const url = cardId ? `/api/config?cardId=${cardId}` : "/api/config";
+
+    fetch(url)
+      .then((r) => {
+        if (!r.ok) throw new Error("Not found");
+        return r.json();
+      })
+      .then((data) => {
+        setConfig({ ...DEFAULT_CONFIG, ...data });
+      })
+      .catch(() => {
+        // Fall back to defaults (or empty state if not on default path)
+        setConfig(DEFAULT_CONFIG);
+      });
   }, []);
 
   return (
-    <ConfigContext.Provider value={config}>
+    <ConfigContext.Provider value={config || DEFAULT_CONFIG}>
       {children}
     </ConfigContext.Provider>
   );

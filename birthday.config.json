@@ -9,9 +9,18 @@
   "wishCardBody2": "You have built a legacy of love and unwavering kindness. Know that you are deeply cherished — not just for what you have done, but for the beautiful person you are.",
   "wishCardClosing": "Here's to many more sweet memories to come.",
   "signers": [
-    { "name": "Jhankar", "role": "Daughter" },
-    { "name": "Hitesh", "role": "Son-in-law" },
-    { "name": "Dhruv", "role": "Grandson" }
+    {
+      "name": "Jhankar",
+      "role": "Daughter"
+    },
+    {
+      "name": "Hitesh",
+      "role": "Son-in-law"
+    },
+    {
+      "name": "Dhruv",
+      "role": "Grandson"
+    }
   ],
   "giftBoxMessage": "Wishing you endless joy & health!",
   "galleryTitle": "Happy 70th Birthday!",

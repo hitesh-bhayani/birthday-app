@@ -27,11 +27,13 @@ export default function Gallery() {
   };
 
   const handleShare = async () => {
+    const shareTitle = config?.galleryTitle || 'Celebration Cards';
+    const shareText = `Check out this beautiful interactive ${config?.occasion || 'birthday'} celebration!`;
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Happy 70th Birthday!',
-          text: 'Check out this beautiful interactive birthday celebration!',
+          title: shareTitle,
+          text: shareText,
           url: window.location.href,
         });
       } catch (error) {
@@ -68,14 +70,15 @@ export default function Gallery() {
     frame();
   }, []);
 
-  // Load image filenames from the public/original_images folder via API
+  // Load image filenames from the public/uploads/[cardId]/images folder via API
   useEffect(() => {
+    if (!config) return;
     const fetchImages = async () => {
       try {
-        const res = await fetch('/api/images');
+        const url = config.cardId ? `/api/images?cardId=${config.cardId}` : '/api/images';
+        const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to fetch images');
         const data = await res.json();
-        // data is an array of URLs like '/original_images/filename.jpg'
         setImages(data);
       } catch (error) {
         console.error('Error loading images:', error);
@@ -83,7 +86,7 @@ export default function Gallery() {
       }
     };
     fetchImages();
-  }, []);
+  }, [config]);
 
   // Auto-play slideshow
   useEffect(() => {

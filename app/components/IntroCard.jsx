@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, Play, Pause } from "lucide-react";
 import { useConfig } from "../context/ConfigContext";
+import { getTheme } from "../utils/themes";
 
 export default function IntroCard({ onStart }) {
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -11,14 +12,17 @@ export default function IntroCard({ onStart }) {
   const [voiceNoteUrl, setVoiceNoteUrl] = useState(null);
   const voiceAudioRef = useRef(null);
   const config = useConfig();
+  const theme = getTheme(config?.occasion);
 
   // Check if a voice note recording exists
   useEffect(() => {
-    fetch('/api/voice-note')
+    if (!config) return;
+    const url = config.cardId ? `/api/voice-note?cardId=${config.cardId}` : '/api/voice-note';
+    fetch(url)
       .then(r => r.json())
       .then(data => { if (data.exists) setVoiceNoteUrl(data.url); })
       .catch(() => {});
-  }, []);
+  }, [config]);
 
   useEffect(() => {
     const handleOrientation = (e) => {
@@ -101,13 +105,16 @@ export default function IntroCard({ onStart }) {
           initial={{ opacity: 0, scale: 0.9, rotateX: 10 }}
           animate={{ opacity: 1, scale: 1, rotateX: tilt.y, rotateY: tilt.x }}
           transition={{ duration: 0.8, type: "spring", bounce: 0.3 }}
+          style={{
+            boxShadow: `0 20px 50px rgba(0,0,0,0.5), 0 0 40px ${theme.glowColor || "rgba(236, 72, 153, 0.2)"}`
+          }}
         >
-          {/* Decorative floating shapes inside the card */}
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute top-8 left-8 text-yellow-300/30 no-print">
-            <Star size={24} fill="currentColor" />
+          {/* Decorative floating shapes inside the card based on theme */}
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 20, repeat: Infinity, ease: "linear" }} className="absolute top-8 left-8 text-white/20 no-print">
+            {theme.particleType === "heart" ? "❤️" : theme.particleType === "blossom" ? "🌸" : "✨"}
           </motion.div>
-          <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-12 right-6 md:right-10 text-pink-300/30 no-print">
-            <Star size={32} fill="currentColor" />
+          <motion.div animate={{ y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-12 right-6 md:right-10 text-white/20 no-print">
+            {theme.particleType === "heart" ? "💖" : theme.particleType === "petal" ? "🌹" : "⭐"}
           </motion.div>
           <Quote className="absolute top-10 left-10 md:left-20 text-white/5 rotate-180 w-12 h-12 md:w-16 md:h-16 no-print pointer-events-none" />
 
@@ -119,7 +126,7 @@ export default function IntroCard({ onStart }) {
             className="relative z-10"
           >
             <h1 className="text-2xl md:text-5xl font-extrabold mb-4 md:mb-10 tracking-tight print-text-accent">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-rose-300 to-indigo-400 drop-shadow-lg print-text-accent">
+              <span className={`text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-${theme.accentColor === 'amber' ? 'yellow' : theme.accentColor === 'rose' ? 'red' : 'rose'}-300 to-indigo-400 drop-shadow-lg print-text-accent`}>
                 {config.wishCardTitle || "Happy 70th Birthday!"}
               </span>
             </h1>
@@ -139,7 +146,7 @@ export default function IntroCard({ onStart }) {
             </motion.p>
             <motion.div variants={itemVariants} className="mt-2 md:mt-6">
               <div className="w-16 md:w-24 h-[1px] bg-gradient-to-r from-transparent via-pink-400 to-transparent mx-auto mb-3 opacity-50 no-print" />
-              <p className="text-xs md:text-base text-pink-300 font-serif italic mb-3">
+              <p className={`text-xs md:text-base text-${theme.accentColor === 'blue' ? 'blue' : theme.accentColor === 'amber' ? 'yellow' : 'pink'}-300 font-serif italic mb-3`}>
                 {config.wishCardClosing || "Here's to many more sweet memories to come."}
               </p>
               {/* Name chips */}
