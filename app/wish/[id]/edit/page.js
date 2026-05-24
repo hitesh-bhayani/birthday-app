@@ -7,7 +7,7 @@ import {
   Palette, Image, Music, Settings, Save, Upload, Trash2,
   Plus, X, CheckCircle, AlertCircle, LogOut, ExternalLink,
   User, MessageSquare, Users, Play, Pause, Lock, Eye, EyeOff,
-  Camera, Mic, Square, RefreshCw, Radio
+  Camera, Mic, Square, RefreshCw, Radio, ChevronLeft, ChevronRight, Sparkles
 } from "lucide-react";
 import { getTheme } from "../../../utils/themes";
 
@@ -73,11 +73,15 @@ export default function WishEditPage() {
   const [tab, setTab] = useState("content");
   const [config, setConfig] = useState(null);
   const [images, setImages] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [voicePlaying, setVoicePlaying] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
+  const [aiFacts, setAiFacts] = useState("");
+  const [aiTone, setAiTone] = useState("Deeply Emotional");
+  const [pastedJson, setPastedJson] = useState("");
   
   const voiceRef = useRef(null);
   const musicRef = useRef(null);
@@ -304,7 +308,12 @@ export default function WishEditPage() {
     const res = await fetch(`/api/upload/photos?cardId=${cardId}`, { method: "POST", body: fd });
     const data = await res.json();
     if (data.success) {
-      setImages(prev => [...prev, ...data.saved]);
+      const updatedImages = [...images, ...data.saved];
+      setImages(updatedImages);
+      setConfig(c => ({
+        ...c,
+        imagesOrder: updatedImages
+      }));
       showToast(`${data.saved.length} photo(s) uploaded!`);
     } else {
       showToast("Upload failed", "error");
@@ -320,11 +329,146 @@ export default function WishEditPage() {
       body: JSON.stringify({ filename }),
     });
     if (res.ok) {
-      setImages(prev => prev.filter(i => i !== src));
-      if (config.heroImagePath === src) updateField("heroImagePath", images.find(i => i !== src) || "");
+      const updatedImages = images.filter(i => i !== src);
+      setImages(updatedImages);
+      setConfig(c => {
+        const next = { ...c, imagesOrder: updatedImages };
+        if (c.heroImagePath === src) {
+          next.heroImagePath = updatedImages.find(i => i !== src) || "";
+        }
+        return next;
+      });
       showToast("Photo deleted");
     } else {
       showToast("Delete failed", "error");
+    }
+  };
+
+  const moveImage = (index, direction) => {
+    const newImages = [...images];
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= newImages.length) return;
+
+    // Swap images
+    const temp = newImages[index];
+    newImages[index] = newImages[targetIndex];
+    newImages[targetIndex] = temp;
+
+    setImages(newImages);
+    setConfig(c => ({
+      ...c,
+      imagesOrder: newImages
+    }));
+  };
+
+  const handleMoveImage = (e, index, direction) => {
+    e.stopPropagation();
+    moveImage(index, direction);
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    const reordered = [...images];
+    const draggedItem = reordered[draggedIndex];
+    reordered.splice(draggedIndex, 1);
+    reordered.splice(targetIndex, 0, draggedItem);
+
+    setImages(reordered);
+    setConfig(c => ({
+      ...c,
+      imagesOrder: reordered
+    }));
+    setDraggedIndex(null);
+  };
+
+  const generateAIPrompt = () => {
+    if (!config) return "";
+    const signersList = (config.signers || []).map(s => `${s.name} (${s.role || 'Family Senders'})`).join(", ");
+
+    return `You are an expert copywriter. Craft a highly personalized premium greeting card in a ${aiTone} tone for my beloved ${config.recipientName || 'recipient'} who is celebrating their ${config.age || '70'}th ${config.occasion || 'birthday'}.
+The card is sent by: ${signersList || 'Loving Family'}.
+
+Here are some additional facts/memories/traits about ${config.recipientName || 'them'} to weave into the messages:
+${aiFacts || '(No additional facts provided - write a universally beautiful, heartfelt message celebrating their life milestones)'}
+
+Generate a JSON object matching this structure. Follow these key copy rules:
+1. Make the text flow like a cohesive, poetic story, not generic greeting templates.
+2. Emphasize their wisdom, love, legacy, and the key facts mentioned above.
+3. Be highly creative. Avoid overly cheesy clichés. Keep it elegant.
+
+JSON SCHEMA:
+{
+  "landingTitle": "Happy ${config.age || '70'}th Birthday [Name]",
+  "landingSubtitle": "[A short, elegant, warm subtitle inviting them to click to unlock their journey of memories. Keep it under 20 words.]",
+  "wishCardTitle": "[A main greeting card heading, e.g. 'A Lifetime of Love']",
+  "wishCardBody1": "[A beautiful, deeply moving paragraph about their life, achievements, or legacy. Max 45 words.]",
+  "wishCardBody2": "[Another heartwarming paragraph about their kindness, guidance, impact, and value. Max 45 words.]",
+  "wishCardClosing": "[Closing warm words, e.g., 'Here\\'s to many more sweet memories to come.']",
+  "giftBoxMessage": "[A short sweet surprise sentence inside the virtual present, e.g. 'Wishing you endless joy & health!']",
+  "galleryTitle": "[Title for the photo polaroid gallery, e.g., 'Moments in Time']",
+  "gallerySubtitle": "[A beautiful, loving subtitle for the gallery, e.g., 'A lifetime of memories, and so many more to make. Thank you for being you.']"
+}
+
+IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax (like \`\`\`json), explanations, or any other characters. Just plain valid JSON matching the schema above.`;
+  };
+
+  const handleAIFilesUpload = (files) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        setPastedJson(text);
+        showToast("JSON file loaded successfully!");
+      } catch {
+        showToast("Error reading file", "error");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleApplyAIJson = () => {
+    if (!pastedJson.trim()) {
+      showToast("Please paste or upload JSON first", "error");
+      return;
+    }
+
+    try {
+      let cleanText = pastedJson.trim();
+      if (cleanText.startsWith("```")) {
+        cleanText = cleanText.replace(/^```(json)?/, "").replace(/```$/, "").trim();
+      }
+
+      const parsed = JSON.parse(cleanText);
+      const required = ["landingTitle", "landingSubtitle", "wishCardTitle", "wishCardBody1", "wishCardBody2", "wishCardClosing", "giftBoxMessage", "galleryTitle", "gallerySubtitle"];
+      const missing = required.filter(k => !(k in parsed));
+
+      if (missing.length === required.length) {
+        showToast("Valid schema fields not found in the JSON", "error");
+        return;
+      }
+
+      setConfig(prev => ({
+        ...prev,
+        ...parsed
+      }));
+
+      showToast(`AI content patched! ${required.length - missing.length} fields updated. Click "Save All Details" below to apply permanently!`);
+    } catch (e) {
+      console.error(e);
+      showToast("Invalid JSON syntax. Please check for missing quotes or commas.", "error");
     }
   };
 
@@ -372,6 +516,7 @@ export default function WishEditPage() {
     { id: "content", label: "Content", icon: Palette },
     { id: "photos", label: "Photos", icon: Image },
     { id: "audio", label: "Audio", icon: Music },
+    { id: "ai", label: "AI Copywriter", icon: Sparkles },
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
@@ -623,6 +768,11 @@ export default function WishEditPage() {
               <Card title={`Gallery Photos (${images.length})`} icon={Image}>
                 {images.length > 0 ? (
                   <>
+                    <p className="text-xs text-gray-400 mb-4 bg-white/5 p-3 rounded-xl border border-white/5 flex items-center gap-2">
+                      <Radio size={12} className="text-pink-400 animate-pulse" />
+                      <span>💡 <strong>Tip:</strong> Drag and drop any photo to reorder! Tap an image to select it as the primary Hero banner.</span>
+                    </p>
+
                     <Field label="Set Hero Image (shown on Landing page)">
                       <select className={inputClass} value={config.heroImagePath || ""} onChange={e => updateField("heroImagePath", e.target.value)}>
                         <option value="">-- Select Hero Photo --</option>
@@ -633,20 +783,53 @@ export default function WishEditPage() {
                     </Field>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
-                      {images.map(src => (
-                        <div key={src} className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${config.heroImagePath === src ? "border-pink-500 animate-pulse" : "border-transparent hover:border-white/20"}`}
-                          onClick={() => updateField("heroImagePath", src)}>
-                          <img src={src} alt="" className="w-full aspect-square object-cover" />
+                      {images.map((src, index) => (
+                        <motion.div
+                          layout
+                          key={src}
+                          draggable
+                          onDragStart={e => handleDragStart(e, index)}
+                          onDragOver={handleDragOver}
+                          onDrop={e => handleDrop(e, index)}
+                          className={`relative group rounded-xl overflow-hidden border-2 transition-all cursor-grab active:cursor-grabbing ${draggedIndex === index ? "opacity-30 scale-95 border-pink-500/50" : ""} ${config.heroImagePath === src ? "border-pink-500 animate-[pulse_2s_infinite]" : "border-transparent hover:border-white/20"}`}
+                          onClick={() => updateField("heroImagePath", src)}
+                        >
+                          <img src={src} alt="" className="w-full aspect-square object-cover pointer-events-none select-none" />
                           {config.heroImagePath === src && (
-                            <div className="absolute top-2 left-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">HERO</div>
+                            <div className="absolute top-2 left-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full select-none">HERO</div>
                           )}
                           <button
                             onClick={e => { e.stopPropagation(); handleDeletePhoto(src); }}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-400 text-white p-1.5 rounded-full transition-all"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 bg-red-500 hover:bg-red-400 text-white p-1.5 rounded-full transition-all shadow-md z-10"
                           >
                             <Trash2 size={12} />
                           </button>
-                        </div>
+
+                          {/* Reordering Controls Overlay */}
+                          <div className="absolute bottom-2 left-2 right-2 flex justify-between opacity-0 group-hover:opacity-100 transition-all gap-1.5 z-10">
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={e => handleMoveImage(e, index, -1)}
+                              className={`p-1.5 rounded-lg bg-black/60 hover:bg-pink-500 text-white transition-all shadow-md active:scale-95 ${index === 0 ? "opacity-30 cursor-not-allowed hover:bg-black/60" : ""}`}
+                              title="Move Earlier"
+                            >
+                              <ChevronLeft size={12} />
+                            </button>
+                            <span className="text-[10px] text-white bg-black/60 px-2 py-1 rounded-md backdrop-blur-sm self-center font-medium pointer-events-none select-none">
+                              {index + 1}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={index === images.length - 1}
+                              onClick={e => handleMoveImage(e, index, 1)}
+                              className={`p-1.5 rounded-lg bg-black/60 hover:bg-pink-500 text-white transition-all shadow-md active:scale-95 ${index === images.length - 1 ? "opacity-30 cursor-not-allowed hover:bg-black/60" : ""}`}
+                              title="Move Later"
+                            >
+                              <ChevronRight size={12} />
+                            </button>
+                          </div>
+                        </motion.div>
                       ))}
                     </div>
 
@@ -774,6 +957,116 @@ export default function WishEditPage() {
                   )}
                 </div>
               </Card>
+            </motion.div>
+          )}
+
+          {tab === "ai" && (
+            <motion.div key="ai" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+              <Card title="AI Copywriter Assistant" icon={Sparkles}>
+                <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+                  Use your favorite AI (Gemini, Claude, ChatGPT, etc.) to write highly personalized, emotionally resonant greeting card messages! 
+                  Just answer a few facts below, copy the prompt, and upload/paste the AI's generated response to instantly auto-fill all text fields.
+                </p>
+
+                <div className="space-y-4">
+                  {/* Step 1: Input bullet points */}
+                  <Field label="Step 1: Tell the AI about the recipient">
+                    <p className="text-[11px] text-gray-500 mb-2">Write down some memories, hobbies, personality traits, past jobs, or unique qualities to make the card uniquely theirs.</p>
+                    <textarea
+                      className={textareaClass}
+                      value={aiFacts}
+                      onChange={e => setAiFacts(e.target.value)}
+                      placeholder="e.g. He worked as an engineer for 40 years. He loves walking in the garden every morning. He has three grandkids he adores. He's always smiling and is a huge fan of old Bollywood music."
+                      rows={4}
+                    />
+                  </Field>
+
+                  {/* Step 2: Tone Selector */}
+                  <Field label="Step 2: Choose the Tone/Vibe">
+                    <select className={inputClass} value={aiTone} onChange={e => setAiTone(e.target.value)}>
+                      <option value="Deeply Emotional & Touching">Deeply Emotional & Touching</option>
+                      <option value="Witty, Funny & Playful">Witty, Funny & Playful</option>
+                      <option value="Grand, Majestic & Respectful">Grand, Respectful & Honorific</option>
+                      <option value="Poetic, Artful & Artistic">Poetic, Artful & Artistic</option>
+                      <option value="Short, Sweet & Warm">Short, Sweet & Warm</option>
+                    </select>
+                  </Field>
+
+                  {/* Step 3: Copy AI Prompt */}
+                  <div className="mt-6 p-4 bg-white/5 border border-white/10 rounded-2xl">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-white text-sm font-semibold flex items-center gap-2">
+                        <MessageSquare size={16} className="text-pink-400" />
+                        Step 3: Copy Optimized AI Prompt
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(generateAIPrompt());
+                          showToast("Optimized AI prompt copied to clipboard!");
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-pink-500 hover:bg-pink-400 active:scale-95 transition-all shadow-md flex items-center gap-1.5"
+                      >
+                        Copy Prompt
+                      </button>
+                    </div>
+                    <textarea
+                      className="w-full bg-black/40 border border-white/5 rounded-xl p-3 text-[11px] font-mono text-gray-400 h-40 focus:outline-none"
+                      readOnly
+                      value={generateAIPrompt()}
+                    />
+                  </div>
+
+                  {/* Step 4: Import AI JSON */}
+                  <div className="mt-6 border-t border-white/10 pt-6">
+                    <h3 className="text-white text-sm font-semibold mb-3 flex items-center gap-2">
+                      <Upload size={16} className="text-pink-400" />
+                      Step 4: Paste or Upload AI JSON output
+                    </h3>
+                    <p className="text-xs text-gray-400 mb-4">Paste the JSON response from your AI assistant below, or upload the generated `.json` file.</p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      {/* JSON Textarea Paste */}
+                      <textarea
+                        className={`${textareaClass} font-mono text-xs`}
+                        value={pastedJson}
+                        onChange={e => setPastedJson(e.target.value)}
+                        placeholder='Paste JSON here (e.g. {"landingTitle": "...", "wishCardTitle": "..."})'
+                        rows={6}
+                      />
+
+                      {/* JSON File Upload */}
+                      <div
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = ".json";
+                          input.onchange = (e) => handleAIFilesUpload(e.target.files);
+                          input.click();
+                        }}
+                        className="border-2 border-dashed border-white/20 rounded-2xl p-6 text-center cursor-pointer hover:border-pink-500/50 hover:bg-pink-500/5 transition-all flex flex-col items-center justify-center min-h-[140px]"
+                      >
+                        <Upload className="mb-2 text-gray-400" size={24} />
+                        <p className="text-white font-medium text-xs mb-0.5">Click to upload JSON file</p>
+                        <p className="text-[10px] text-gray-500">Supports standard .json file format</p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleApplyAIJson}
+                      className="w-full py-3.5 rounded-2xl font-bold text-white bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 shadow-md active:scale-95 hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      🪄 Auto-Fill & Apply AI Copywriting
+                    </button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Global Save */}
+              <button onClick={handleSave} disabled={saving} className="w-full py-4 rounded-2xl font-bold text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 transition-all flex items-center justify-center gap-3 shadow-lg">
+                <Save size={18} /> {saving ? "Saving Changes..." : "Save All Details"}
+              </button>
             </motion.div>
           )}
 

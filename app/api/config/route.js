@@ -1,6 +1,21 @@
 // app/api/config/route.js
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
+import { createHash } from "crypto";
+
+function hashPassword(password) {
+  if (!password) return "";
+  return createHash("sha256").update(password).digest("hex");
+}
+
+function verifyPassword(inputPassword, storedPasswordOrHash) {
+  if (!storedPasswordOrHash || !inputPassword) return false;
+  const isHash = /^[a-fA-F0-9]{64}$/.test(storedPasswordOrHash);
+  if (isHash) {
+    return hashPassword(inputPassword) === storedPasswordOrHash;
+  }
+  return inputPassword === storedPasswordOrHash;
+}
 
 const DATA_DIR = join(process.cwd(), "data", "wishes");
 const FALLBACK_CONFIG_PATH = join(process.cwd(), "birthday.config.json");
@@ -63,7 +78,7 @@ export async function POST(request) {
 
     if (!isNew) {
       const activePassword = existing.editPassword || existing.adminPassword || "birthday2024";
-      if (password !== activePassword) {
+      if (!verifyPassword(password, activePassword)) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
     }
@@ -86,6 +101,14 @@ export async function POST(request) {
     }
     delete updated.newEditPassword;
     delete updated.adminPassword; // Standardize on editPassword
+
+    // Hashing before saving
+    if (updated.editPassword) {
+      const isHash = /^[a-fA-F0-9]{64}$/.test(updated.editPassword);
+      if (!isHash) {
+        updated.editPassword = hashPassword(updated.editPassword);
+      }
+    }
 
     writeFileSync(path, JSON.stringify(updated, null, 2), "utf-8");
     return Response.json({ success: true, cardId: updated.cardId });

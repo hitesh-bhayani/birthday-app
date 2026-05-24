@@ -1,8 +1,27 @@
 // app/api/images/route.js
 import { NextResponse } from 'next/server';
 import { readdir, unlink } from 'fs/promises';
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+
+function getImagesOrder(cardId) {
+  try {
+    const DATA_DIR = join(process.cwd(), "data", "wishes");
+    const FALLBACK_CONFIG_PATH = join(process.cwd(), "birthday.config.json");
+    let configPath = FALLBACK_CONFIG_PATH;
+    if (cardId && cardId !== "default") {
+      const safeId = cardId.replace(/[^a-zA-Z0-9_-]/g, "");
+      configPath = join(DATA_DIR, `${safeId}.json`);
+    }
+    if (existsSync(configPath)) {
+      const config = JSON.parse(readFileSync(configPath, "utf-8"));
+      return config.imagesOrder || null;
+    }
+  } catch (e) {
+    console.error("Error reading config for images order:", e);
+  }
+  return null;
+}
 
 function getImagesDir(cardId) {
   if (!cardId || cardId === "default") {
@@ -12,8 +31,18 @@ function getImagesDir(cardId) {
     };
   }
   const safeId = cardId.replace(/[^a-zA-Z0-9_-]/g, "");
+  const customPath = join(process.cwd(), 'public', 'uploads', safeId, 'images');
+
+  // Fallback for pappa-70 to original_images if no custom folder exists
+  if (safeId === "pappa-70" && !existsSync(customPath)) {
+    return {
+      dirPath: join(process.cwd(), 'public', 'original_images'),
+      publicPrefix: '/original_images'
+    };
+  }
+
   return {
-    dirPath: join(process.cwd(), 'public', 'uploads', safeId, 'images'),
+    dirPath: customPath,
     publicPrefix: `/uploads/${safeId}/images`
   };
 }
@@ -35,9 +64,21 @@ export async function GET(request) {
     }
 
     const files = await readdir(dirPath);
-    const images = files
+    let images = files
       .filter((f) => f.match(/\.(png|jpe?g|gif|webp|svg)$/i))
       .map((f) => `${publicPrefix}/${f}`);
+
+    const order = getImagesOrder(cardId);
+    if (order && Array.isArray(order)) {
+      images.sort((a, b) => {
+        let idxA = order.indexOf(a);
+        let idxB = order.indexOf(b);
+        if (idxA === -1) idxA = 999999;
+        if (idxB === -1) idxB = 999999;
+        return idxA - idxB;
+      });
+    }
+
     return NextResponse.json(images);
   } catch (error) {
     console.error('Error reading images directory:', error);

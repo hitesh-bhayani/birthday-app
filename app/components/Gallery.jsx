@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
-import { ChevronRight, ChevronLeft, X, Play, Pause, Maximize, Share2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, X, Play, Pause, Maximize, Share2, Sparkles } from "lucide-react";
 import { playPartyPopperSound } from "../utils/audioFX";
 import { useConfig } from "../context/ConfigContext";
 
@@ -287,6 +287,37 @@ export default function Gallery() {
               </motion.div>
             ))}
       </div>
+
+      {/* Viral Marketing CTA Card */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1.2, duration: 0.8 }}
+        className="relative max-w-xl w-full p-6 md:p-8 rounded-3xl bg-white/5 border border-pink-500/20 backdrop-blur-md text-center mt-12 mb-8 overflow-hidden group shadow-2xl"
+      >
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-full bg-pink-500/10 blur-2xl pointer-events-none group-hover:scale-125 transition-all duration-700" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none group-hover:scale-125 transition-all duration-700" />
+
+        <div className="relative z-10 space-y-4">
+          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-r from-pink-500 to-purple-600 shadow-md">
+            <Sparkles className="w-5 h-5 text-white animate-pulse" />
+          </div>
+          <h3 className="text-xl md:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300">
+            Wowed by this surprise? 🎁
+          </h3>
+          <p className="text-sm text-gray-400 font-light max-w-md mx-auto leading-relaxed">
+            Craft a gorgeous, personalized interactive greeting card for your parents, partner, or friends and fill it with beautiful animations, games, and memories!
+          </p>
+          <div className="pt-2">
+            <button
+              onClick={() => window.location.href = "/create"}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm text-white bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:shadow-[0_0_20px_rgba(236,72,153,0.4)] active:scale-95 transition-all"
+            >
+              Create Your Own Surprise <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Share Button (Marketing/Virality) */}
       <motion.div
