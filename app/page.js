@@ -128,7 +128,7 @@ export default function PortalHub() {
               {OCCASIONS.map((occ, idx) => (
                 <motion.div
                   key={occ.id}
-                  onClick={() => router.push(`/create?occasion=${occ.id}`)}
+                  onClick={() => router.push(`/wish/create?occasion=${occ.id}`)}
                   whileHover={{ scale: 1.025, y: -2 }}
                   whileTap={{ scale: 0.985 }}
                   className="relative group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-white/20"

@@ -327,7 +327,7 @@ export default function Gallery() {
           </p>
           <div className="pt-2">
             <button
-              onClick={() => window.location.href = "/create"}
+              onClick={() => window.location.href = "/wish/create"}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full font-bold text-sm text-white bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 hover:shadow-[0_0_20px_rgba(236,72,153,0.4)] active:scale-95 transition-all"
             >
               Create Your Own Surprise <ChevronRight size={14} />
