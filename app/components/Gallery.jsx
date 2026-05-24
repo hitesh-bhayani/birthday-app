@@ -181,6 +181,16 @@ export default function Gallery() {
               >
                 <Maximize size={22} />
               </button>
+
+              <div className="w-[1px] h-6 bg-white/20 mx-2" />
+
+              <button 
+                onClick={() => setIsSlideshow(false)}
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 p-1.5 rounded-lg transition-all hover:scale-110 active:scale-95"
+                title="Stop Slideshow & Return to Gallery"
+              >
+                <X size={22} />
+              </button>
             </div>
           </motion.div>
         )}
