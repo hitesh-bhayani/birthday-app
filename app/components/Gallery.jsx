@@ -196,7 +196,14 @@ export default function Gallery() {
           ✨ The Best is Yet to Come
         </span>
         <h2 className="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 to-indigo-400 mb-4 tracking-tight">
-          {config.galleryTitle || "Happy 70th Birthday!"}
+          {config.galleryTitle || (
+            config.occasion === "anniversary" ? "Happy Anniversary!" :
+            config.occasion === "wedding" ? "Happy Wedding Day!" :
+            config.occasion === "engagement" ? "Happy Engagement!" :
+            config.occasion === "mother-day" ? "Happy Mother's Day!" :
+            config.occasion === "father-day" ? "Happy Father's Day!" :
+            config.age ? `Happy ${config.age}th Birthday!` : "Happy Birthday!"
+          )}
         </h2>
         <p className="text-lg text-gray-300 font-light leading-relaxed">
           {config.gallerySubtitle || "A lifetime of memories, and so many more to make. Thank you for being you."}

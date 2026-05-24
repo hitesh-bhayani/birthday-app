@@ -127,7 +127,14 @@ export default function IntroCard({ onStart }) {
           >
             <h1 className="text-2xl md:text-5xl font-extrabold mb-4 md:mb-10 tracking-tight print-text-accent">
               <span className={`text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-${theme.accentColor === 'amber' ? 'yellow' : theme.accentColor === 'rose' ? 'red' : 'rose'}-300 to-indigo-400 drop-shadow-lg print-text-accent`}>
-                {config.wishCardTitle || "Happy 70th Birthday!"}
+                {config.wishCardTitle || (
+                  config.occasion === "anniversary" ? "Happy Anniversary!" :
+                  config.occasion === "wedding" ? "Happy Wedding Day!" :
+                  config.occasion === "engagement" ? "Happy Engagement!" :
+                  config.occasion === "mother-day" ? "Happy Mother's Day!" :
+                  config.occasion === "father-day" ? "Happy Father's Day!" :
+                  config.age ? `Happy ${config.age}th Birthday!` : "Happy Birthday!"
+                )}
               </span>
             </h1>
           </motion.div>
