@@ -1,0 +1,49 @@
+/* app/components/IntroCard.module.css */
+.heroSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  border-radius: 1.5rem;
+  padding: 3rem 2rem;
+  text-align: center;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  max-width: 500px;
+  width: 100%;
+}
+
+.title {
+  font-size: 2.5rem;
+  color: #fff;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.from {
+  font-size: 1.2rem;
+  color: #bbb;
+  margin-bottom: 1.5rem;
+}
+
+.startBtn {
+  background: linear-gradient(90deg, #ff6b6b, #f06595);
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.startBtn:hover {
+  box-shadow: 0 6px 15px rgba(255, 107, 107, 0.5);
+}

@@ -1,0 +1,31 @@
+/* app/components/GiftBox.module.css */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f0c29, #302b63);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.box {
+  width: 150px;
+  height: 150px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  cursor: grab;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.instruction {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  color: #ddd;
+}

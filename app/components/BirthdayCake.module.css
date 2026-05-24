@@ -1,0 +1,28 @@
+/* app/components/BirthdayCake.module.css */
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #2c3e50, #4ca1af);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.cake {
+  width: 200px;
+  height: 200px;
+  cursor: pointer;
+}
+
+.svg {
+  width: 100%;
+  height: auto;
+}
+
+.instruction {
+  margin-top: 1rem;
+  font-size: 1.2rem;
+  color: #e0e0e0;
+}
