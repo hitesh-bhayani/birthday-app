@@ -1,0 +1,50 @@
+{
+  "recipientName": "Pappa",
+  "age": 70,
+  "landingTitle": "Happy 70th Birthday Pappa",
+  "landingSubtitle": "Seventy years of love, wisdom, strength, and a legacy that lives in all of us.",
+  "wishCardTitle": "The Heart of Our Family",
+  "wishCardBody1": "Through every season of life, you have been our quiet strength — leading with dignity, protecting with love, and giving without ever asking for anything in return. Your seventy years are not measured by time, but by the countless lives you have touched.",
+  "wishCardBody2": "Your wisdom shaped our paths, your laughter filled our home, and your presence made every moment feel safe. To Jhankar, Hitesh, and little Dhruv, you are not only loved deeply — you are admired beyond words.",
+  "wishCardClosing": "May the years ahead bring you the same warmth, peace, and happiness you have given so generously to all of us.",
+  "giftBoxMessage": "With endless love, gratitude, and wishes for beautiful years ahead.",
+  "galleryTitle": "A Lifetime Beautifully Lived",
+  "gallerySubtitle": "Every photograph holds a story, every memory holds your love, and every smile begins with you.",
+  "occasion": "birthday",
+  "cardId": "pappa-70",
+  "editPassword": "89b40d4e0edf8d7345db756c9ce9f6177f89ecf197995464bf4366ea98dc721e",
+  "signers": [
+    {
+      "name": "Jhankar",
+      "role": "Daughter"
+    },
+    {
+      "name": "Hitesh",
+      "role": "Son-in-law"
+    },
+    {
+      "name": "Dhruv",
+      "role": "Grandson"
+    }
+  ],
+  "heroImagePath": "/original_images/PREM2902.JPG",
+  "musicPath": "/birthday-music.mp3",
+  "imagesOrder": [
+    "/original_images/480226083_3546660945470959_2774304636313414454_n.jpg",
+    "/original_images/PREM1609.JPG",
+    "/original_images/PREM1434.JPG",
+    "/original_images/PREM1705.JPG",
+    "/original_images/462707842_3404239006379821_6318747473774783488_n.jpg",
+    "/original_images/513087392_3710586829078369_2053570551952272879_n.jpg",
+    "/original_images/499369040_3707341549402897_4752925677791613015_n.jpg",
+    "/original_images/509195286_3707341492736236_1468639947144895685_n.jpg",
+    "/original_images/WhatsApp Image 2026-05-23 at 10.10.10 PM.jpeg",
+    "/original_images/WhatsApp Image 2026-05-23 at 9.57.23 PM.jpeg",
+    "/original_images/PREM2228.JPG",
+    "/original_images/PREM2521.JPG",
+    "/original_images/PREM2666.JPG",
+    "/original_images/WhatsApp Image 2026-05-23 at 9.59.08 PM.jpeg",
+    "/original_images/PREM2902.JPG",
+    "/original_images/WhatsApp Image 2026-05-23 at 10.03.47 PM.jpeg"
+  ]
+}

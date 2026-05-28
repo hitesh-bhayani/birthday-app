@@ -40,10 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# private family celebration data
-/data/
+# private family celebration data - kept in git for deployment
 /public/uploads/
-/public/original_images/
-/public/voice-notes/
-/birthday.config.json
 

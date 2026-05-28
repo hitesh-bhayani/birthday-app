@@ -1,0 +1,28 @@
+{
+  "recipientName": "Hitesh and Jhankar",
+  "age": 0,
+  "landingTitle": "Happy Engagement",
+  "landingSubtitle": "Welcome to a special milestone celebrating the promise of forever.",
+  "wishCardTitle": "Congratulations on Your Engagement!",
+  "wishCardBody1": "Two beautiful souls taking a major step towards a lifetime of shared moments, supportive partnerships, and wonderful adventures.",
+  "wishCardBody2": "May this special time of planning and dreaming be filled with laughter and anticipation. We are so excited to celebrate your beautiful love.",
+  "wishCardClosing": "Here's to a future full of promise, connection, and joy.",
+  "giftBoxMessage": "Wishing you beautiful memories as you build your future together!",
+  "galleryTitle": "The Promise of Forever",
+  "gallerySubtitle": "Steps along the path to forever. We are so happy for both of you.",
+  "occasion": "engagement",
+  "cardId": "hitesh4",
+  "editPassword": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+  "signers": [
+    {
+      "name": "Hitesh",
+      "role": ""
+    },
+    {
+      "name": "Jhankar",
+      "role": ""
+    }
+  ],
+  "heroImagePath": "",
+  "musicPath": "/birthday-music.mp3"
+}
