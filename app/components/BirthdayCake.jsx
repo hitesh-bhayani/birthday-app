@@ -420,7 +420,7 @@ export default function BirthdayCake({ onBlow }) {
         // so fans / AC don't false-trigger.
         let calibFrames = 0;
         let calibSum = 0;
-        let blowThreshold = 45; // fallback until calibrated
+        let blowThreshold = 30; // fallback until calibrated (lowered for easier blowing)
 
         const tick = () => {
           if (!analyserRef.current) return;
@@ -434,8 +434,8 @@ export default function BirthdayCake({ onBlow }) {
             calibFrames++;
             if (calibFrames === 60) {
               const baseline = calibSum / 60;
-              // Threshold = 2.8× ambient, but never lower than 45
-              blowThreshold = Math.max(45, baseline * 2.8);
+              // Threshold = 1.8× ambient, never lower than 30 — easier to trigger
+              blowThreshold = Math.max(30, baseline * 1.8);
             }
             animationFrameRef.current = requestAnimationFrame(tick);
             return;
@@ -455,8 +455,8 @@ export default function BirthdayCake({ onBlow }) {
 
           if (avg > blowThreshold) {
             streak++;
-            // Require 12 consecutive frames of sustained blow (~200ms at 60fps)
-            if (streak >= 12) {
+            // Require 6 consecutive frames of sustained blow (~100ms at 60fps)
+            if (streak >= 6) {
               streak = 0;
               setBlowStrength(0);
               resetAutoBlowTimer();
