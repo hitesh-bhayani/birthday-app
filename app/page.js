@@ -84,11 +84,12 @@ export default function PortalHub() {
       {/* Decorative Glow */}
       <div className="absolute top-[-10%] left-[-10%] h-[40rem] w-[40rem] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] h-[40rem] w-[40rem] rounded-full bg-pink-600/10 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[30%] left-[50%] -translate-x-1/2 h-[30rem] w-[30rem] rounded-full bg-indigo-600/5 blur-[120px] pointer-events-none" />
 
       {/* Main Container */}
-      <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 z-10 w-full">
+      <div className="max-w-6xl mx-auto px-4 py-16 md:py-24 z-10 w-full flex flex-col items-center">
         {/* Header */}
-        <div className="text-center max-w-2xl mx-auto mb-16 md:mb-24 space-y-4">
+        <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -112,32 +113,117 @@ export default function PortalHub() {
             transition={{ delay: 0.2, duration: 0.8 }}
             className="text-gray-400 text-base md:text-xl font-light leading-relaxed px-4"
           >
-            Design, personalize, and share gorgeous, immersive interactive surprise cards for your loved ones. Choose an occasion below to start.
+            Design, personalize, and share gorgeous, immersive interactive surprise cards for your loved ones.
           </motion.p>
         </div>
 
-        {/* Portal Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-          
-          {/* Left Column: Creator Templates (Spans 2 columns on desktop) */}
-          <div className="md:col-span-2 space-y-6">
-            <h2 className="text-xl font-semibold text-gray-200 mb-4 flex items-center gap-2">
-              <Gift size={18} className="text-pink-400" /> Craft a New Occasion Surprise Card
+        {/* Centered Code Entry Gate */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.8 }}
+          className="w-full max-w-xl mb-16"
+        >
+          <div className="relative rounded-3xl border border-white/10 bg-white/5 p-8 md:p-10 backdrop-blur-md shadow-2xl overflow-hidden group">
+            {/* Ambient Background Gradient for the card */}
+            <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-r from-pink-500/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-700 blur-xl pointer-events-none" />
+            
+            <div className="relative z-10 space-y-6">
+              <div className="flex flex-col items-center text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 mb-2 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                  <Key size={22} className="animate-pulse" />
+                </div>
+                <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                  Enter Existing Card Code
+                </h2>
+                <p className="text-sm text-gray-400 max-w-md font-light leading-relaxed">
+                  Enter your unique greeting card code below to unlock your personalized interactive experience, or sign in to edit its contents.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={code}
+                    onChange={(e) => { setCode(e.target.value); setError(""); }}
+                    placeholder="Enter Card Code (e.g. mom-70)"
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 focus:outline-none focus:border-pink-500/50 focus:ring-1 focus:ring-pink-500/30 transition-all text-base font-semibold tracking-wide text-center uppercase"
+                  />
+                  {error && (
+                    <p className="text-red-400 text-xs text-center mt-2 flex items-center gap-1 justify-center">
+                      <ShieldAlert size={12} /> {error}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                  <button
+                    onClick={() => handleOpen("view")}
+                    className="flex-1 py-4 rounded-2xl font-bold text-sm bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 active:scale-95 transition-all text-white shadow-[0_0_20px_rgba(236,72,153,0.3)] flex items-center justify-center gap-2"
+                  >
+                    <span>View Greeting Card</span>
+                    <ChevronRight size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleOpen("edit")}
+                    className="flex-1 py-4 rounded-2xl font-bold text-sm bg-white/5 hover:bg-white/10 active:scale-95 transition-all border border-white/10 hover:border-white/20 text-gray-300 flex items-center justify-center gap-2"
+                  >
+                    <span>Edit / Manage Card</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Soft, Artistic Divider */}
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.8 }}
+          className="flex items-center gap-4 w-full max-w-xl mb-16"
+        >
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent via-white/10 to-white/10" />
+          <span className="text-xs font-semibold tracking-[0.2em] text-gray-500 uppercase flex items-center gap-1.5">
+            <Sparkles size={12} className="text-pink-500/60" /> or start fresh <Sparkles size={12} className="text-purple-500/60" />
+          </span>
+          <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent via-white/10 to-white/10" />
+        </motion.div>
+
+        {/* Templates Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.8 }}
+          className="w-full space-y-8"
+        >
+          <div className="text-center space-y-2">
+            <h2 className="text-3xl font-extrabold text-white tracking-tight flex items-center justify-center gap-2">
+              <Gift size={24} className="text-pink-400" /> Craft a New Occasion Surprise Card
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {OCCASIONS.map((occ, idx) => (
-                <motion.div
-                  key={occ.id}
-                  onClick={() => router.push(`/wish/create?occasion=${occ.id}`)}
-                  whileHover={{ scale: 1.025, y: -2 }}
-                  whileTap={{ scale: 0.985 }}
-                  className="relative group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-white/20"
-                >
-                  {/* Subtle Border Glow */}
-                  <div className="absolute -inset-0.5 rounded-3xl bg-gradient-to-r opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-md pointer-events-none" style={{ backgroundImage: `linear-gradient(to right, var(--tw-gradient-stops))` }} />
-                  
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shadow-inner">
+            <p className="text-gray-400 text-sm max-w-lg mx-auto font-light leading-relaxed">
+              Choose one of our premium, handcrafted templates pre-configured with customized assets, physics games, fireworks, and themes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {OCCASIONS.map((occ, idx) => (
+              <motion.div
+                key={occ.id}
+                onClick={() => router.push(`/wish/create?occasion=${occ.id}`)}
+                whileHover={{ scale: 1.03, y: -4 }}
+                whileTap={{ scale: 0.98 }}
+                className="relative group rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md cursor-pointer transition-all duration-300 hover:border-white/20 flex flex-col justify-between min-h-[180px] overflow-hidden"
+              >
+                {/* Custom glowing background behind the template card based on its gradient */}
+                <div 
+                  className={`absolute -inset-0.5 rounded-3xl bg-gradient-to-br ${occ.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500 blur-lg pointer-events-none`} 
+                />
+
+                <div className="space-y-3 relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl shadow-inner group-hover:bg-pink-500/10 group-hover:border-pink-500/30 transition-all duration-300">
                       {occ.emoji}
                     </div>
                     <h3 className="font-bold text-white text-lg group-hover:text-pink-400 transition-colors">
@@ -147,60 +233,17 @@ export default function PortalHub() {
                   <p className="text-gray-400 text-xs md:text-sm font-light leading-relaxed">
                     {occ.desc}
                   </p>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Right Column: Code Gate */}
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold text-gray-200 mb-4 flex items-center gap-2">
-              <Key size={18} className="text-purple-400" /> Enter Existing Card Code
-            </h2>
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="relative rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md"
-            >
-              <p className="text-xs text-gray-400 leading-relaxed mb-6 font-light">
-                Have a special link code or password? Enter it here to open the surprise experience or manage the configuration.
-              </p>
-
-              <div className="space-y-4">
-                <div>
-                  <input
-                    type="text"
-                    value={code}
-                    onChange={(e) => { setCode(e.target.value); setError(""); }}
-                    placeholder="Enter Card Code (e.g. mom-70)"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-white placeholder-gray-500 focus:outline-none focus:border-pink-500/50 transition-all text-sm font-semibold tracking-wide text-center"
-                  />
-                  {error && (
-                    <p className="text-red-400 text-[10px] text-center mt-1.5 flex items-center gap-1 justify-center">
-                      <ShieldAlert size={10} /> {error}
-                    </p>
-                  )}
                 </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleOpen("view")}
-                    className="flex-1 py-3 rounded-2xl font-bold text-sm bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 active:scale-95 transition-all text-white shadow-md"
-                  >
-                    View Card
-                  </button>
-                  <button
-                    onClick={() => handleOpen("edit")}
-                    className="flex-1 py-3 rounded-2xl font-bold text-sm bg-white/5 hover:bg-white/10 active:scale-95 transition-all border border-white/10 hover:border-white/20 text-gray-300"
-                  >
-                    Edit Card
-                  </button>
+                
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-pink-400 group-hover:text-pink-300 mt-4 relative z-10 transition-colors">
+                  <span>Start Crafting</span>
+                  <ChevronRight size={14} className="transform group-hover:translate-x-1 transition-transform" />
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            ))}
           </div>
+        </motion.div>
 
-        </div>
       </div>
 
       {/* Footer */}

@@ -2,9 +2,38 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { useConfig } from "../context/ConfigContext";
 
 export default function FireworksFinale({ onComplete }) {
   const canvasRef = useRef(null);
+  const config = useConfig();
+  const occasion = config?.occasion || "birthday";
+
+  let titleText = "Happy 70th Birthday!";
+  let emoji = "🎂";
+
+  if (occasion === "birthday") emoji = "🎂";
+  else if (occasion === "anniversary") emoji = "🌹";
+  else if (occasion === "wedding") emoji = "🥂";
+  else if (occasion === "engagement") emoji = "💍";
+  else if (occasion === "mother-day") emoji = "🌸";
+  else if (occasion === "father-day") emoji = "👔";
+
+  if (config) {
+    if (config.wishCardTitle) {
+      titleText = config.wishCardTitle;
+    } else if (config.landingTitle) {
+      titleText = config.landingTitle;
+      if (config.recipientName) {
+        titleText = `${config.landingTitle} ${config.recipientName}`;
+      }
+    }
+  }
+
+  // Ensure it has the emoji if not already present
+  if (!titleText.includes(emoji)) {
+    titleText = `${titleText} ${emoji}`;
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -163,8 +192,8 @@ export default function FireworksFinale({ onComplete }) {
         transition={{ delay: 0.5, duration: 1, type: "spring", bounce: 0.4 }}
         className="relative z-10 text-center pointer-events-none px-4"
       >
-        <h2 className="text-4xl md:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-pink-300 to-purple-300 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] leading-tight">
-          Happy 70th<br />Birthday! 🎂
+        <h2 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-pink-300 to-purple-300 drop-shadow-[0_0_30px_rgba(250,204,21,0.8)] leading-tight whitespace-pre-line max-w-4xl mx-auto">
+          {titleText}
         </h2>
         <p className="mt-4 text-lg md:text-2xl text-white/70 font-light tracking-widest">
           With all our love ❤️

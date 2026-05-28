@@ -8,7 +8,7 @@ import StarField from "../../components/StarField";
 
 const PRESETS = {
   birthday: {
-    recipientName: "Mummy",
+    recipientName: "Sunita",
     age: 70,
     landingTitle: "Happy Birthday",
     landingSubtitle: "Get ready to experience a personalized journey full of memories, joy, and a few surprises.",
@@ -148,7 +148,7 @@ function CreateWizardInner() {
       return;
     }
     if (!password || password.length < 4) {
-      setError("Passcode must be at least 4 characters long!");
+      setError("PIN or Passcode must be at least 4 characters long!");
       return;
     }
 
@@ -273,9 +273,9 @@ function CreateWizardInner() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1.5 font-semibold">Secret Editor Passcode</label>
-                  <input className={inputClass} type="password" value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="e.g. secret" />
-                  <p className="text-[10px] text-gray-500 mt-1">Keep this safe! You will need it to upload photos and edit text later.</p>
+                  <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1.5 font-semibold">Access PIN or Passcode</label>
+                  <input className={inputClass} type="password" value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="e.g., 123456" />
+                  <p className="text-[10px] text-gray-500 mt-1">Make it simple (like a phone unlock code). You will need this to upload photos and edit messages later.</p>
                 </div>
               </div>
 

@@ -4,23 +4,19 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const DEFAULT_CONFIG = {
   occasion: "birthday",
-  recipientName: "Mummy",
-  age: 70,
-  heroImagePath: "/original_images/PREM2902.JPG",
+  recipientName: "Friend",
+  age: 0,
+  heroImagePath: "",
   landingTitle: "Happy Birthday",
   landingSubtitle: "Get ready to experience a personalized journey full of memories, joy, and a few surprises.",
-  wishCardTitle: "Happy 70th Birthday!",
-  wishCardBody1: "Seven decades of incredible stories, boundless wisdom, and a heart that has touched so many lives. Your presence has always been our greatest comfort.",
-  wishCardBody2: "You have built a legacy of love and unwavering kindness. Know that you are deeply cherished — not just for what you have done, but for the beautiful person you are.",
-  wishCardClosing: "Here's to many more sweet memories to come.",
-  signers: [
-    { name: "Jhankar", role: "Daughter" },
-    { name: "Hitesh", role: "Son-in-law" },
-    { name: "Dhruv", role: "Grandson" },
-  ],
+  wishCardTitle: "Best Wishes!",
+  wishCardBody1: "Wishing you a wonderful celebration filled with joy, laughter, and beautiful moments. You deserve all the happiness in the world.",
+  wishCardBody2: "May this special occasion bring you closer to your dreams and fill your heart with peace, warmth, and endless smiles.",
+  wishCardClosing: "Celebrating you today and always.",
+  signers: [],
   giftBoxMessage: "Wishing you endless joy & health!",
-  galleryTitle: "Happy 70th Birthday!",
-  gallerySubtitle: "A lifetime of memories, and so many more to make. Thank you for being you.",
+  galleryTitle: "Moments & Memories",
+  gallerySubtitle: "A beautiful collection of shared chapters and special highlights.",
   musicPath: "/birthday-music.mp3",
 };
 
@@ -56,8 +52,12 @@ export function ConfigProvider({ children }) {
         setConfig({ ...DEFAULT_CONFIG, ...data });
       })
       .catch(() => {
-        // Fall back to defaults (or empty state if not on default path)
-        setConfig(DEFAULT_CONFIG);
+        // If it was a specific cardId (and not "default"), set notFound state
+        if (cardId && cardId !== "default") {
+          setConfig({ notFound: true });
+        } else {
+          setConfig(DEFAULT_CONFIG);
+        }
       });
   }, []);
 

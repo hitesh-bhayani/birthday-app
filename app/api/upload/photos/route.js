@@ -2,7 +2,7 @@
 import { writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, parse } from "path";
 
-export const config = { api: { bodyParser: false } };
+
 
 export async function POST(request) {
   try {

@@ -2,8 +2,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, Star, ChevronRight, Volume2, VolumeX, Music, ArrowLeft } from "lucide-react";
+import { Sparkles, Heart, Star, ChevronRight, Volume2, VolumeX, Music, ArrowLeft, AlertCircle } from "lucide-react";
 import confetti from "canvas-confetti";
 
 import IntroCard from "../../components/IntroCard";
@@ -16,6 +17,8 @@ import { useConfig } from "../../context/ConfigContext";
 import { getTheme } from "../../utils/themes";
 
 export default function DynamicWishPage() {
+  const params = useParams();
+  const router = useRouter();
   const [step, setStep] = useState("gateway");
   const [mounted, setMounted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -111,7 +114,45 @@ export default function DynamicWishPage() {
     else if (step === "gallery") setStep("gift");
   };
 
+  // Request mic permission silently before entering the cake screen
+  // so the browser permission popup doesn't interrupt the experience.
+  const requestMicAndGoToCake = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Immediately stop tracks — BirthdayCake will re-request and get cached grant
+      stream.getTracks().forEach(t => t.stop());
+    } catch {
+      // Permission denied or not available — cake screen handles this gracefully
+    }
+    setStep("cake");
+  };
+
   if (!mounted) return null;
+
+  if (config?.notFound) {
+    return (
+      <div className="min-h-screen bg-[#07040d] text-white flex flex-col items-center justify-center p-6 text-center">
+        <StarField />
+        <div className="absolute top-[-10%] left-[-10%] h-[40rem] w-[40rem] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] h-[40rem] w-[40rem] rounded-full bg-pink-600/10 blur-[120px] pointer-events-none" />
+        <div className="relative z-10 max-w-md space-y-6">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
+            <AlertCircle size={32} />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight">Greeting Card Not Found</h1>
+          <p className="text-sm text-gray-400 font-light leading-relaxed">
+            The celebration greeting card code <strong>"{params.id || 'this ID'}"</strong> does not exist in our database yet. It might have been deleted, or the URL could be mistyped.
+          </p>
+          <button
+            onClick={() => router.push("/")}
+            className="w-full py-3.5 rounded-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md active:scale-95 transition-all text-sm"
+          >
+            Go Back Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main 
@@ -348,7 +389,7 @@ export default function DynamicWishPage() {
         {/* STAGE 2 GAME */}
         {step === "game" && (
           <motion.div key="game" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <BalloonGame onComplete={() => setStep("cake")} />
+            <BalloonGame onComplete={requestMicAndGoToCake} />
           </motion.div>
         )}
 

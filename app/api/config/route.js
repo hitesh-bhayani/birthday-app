@@ -70,15 +70,22 @@ export async function POST(request) {
     const path = getFilePath(cardId);
     let existing = readConfig(cardId);
 
-    // If card doesn't exist, we allow creation (without password)
-    // The editPassword will be set inside the request body on first save.
+    // If card doesn't exist, we only allow creation if it's a valid payload from the creation wizard
     const isNew = !existing;
 
     const body = await request.json();
 
+    if (isNew) {
+      if (!body.occasion || !body.recipientName) {
+        return Response.json({ error: "Card not found" }, { status: 404 });
+      }
+    }
+
     if (!isNew) {
       const activePassword = existing.editPassword || existing.adminPassword || "birthday2024";
       if (!verifyPassword(password, activePassword)) {
+        // Anti-Brute-Force Rate Limiter Delay
+        await new Promise(resolve => setTimeout(resolve, 350));
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
     }

@@ -237,16 +237,34 @@ export default function WishEditPage() {
     };
   }, [cameraStream]);
 
+  const [cardExists, setCardExists] = useState(true);
+  const [checkingCard, setCheckingCard] = useState(true);
+
   const getCardPassword = () => {
     return typeof window !== "undefined" ? sessionStorage.getItem(`edit_password_${cardId}`) || "" : "";
   };
 
   useEffect(() => {
-    const stored = sessionStorage.getItem(`authed_${cardId}`);
-    if (stored === "1") {
-      setAuthed(true);
-      loadCardData();
-    }
+    if (!cardId) return;
+    // Check if card exists in the database
+    fetch(`/api/config?cardId=${cardId}`)
+      .then(res => {
+        if (!res.ok) {
+          setCardExists(false);
+        } else {
+          setCardExists(true);
+          const stored = sessionStorage.getItem(`authed_${cardId}`);
+          if (stored === "1") {
+            setAuthed(true);
+            loadCardData();
+          }
+        }
+        setCheckingCard(false);
+      })
+      .catch(() => {
+        setCardExists(false);
+        setCheckingCard(false);
+      });
   }, [cardId]);
 
   const loadCardData = () => {
@@ -396,18 +414,24 @@ export default function WishEditPage() {
     if (!config) return "";
     const signersList = (config.signers || []).map(s => `${s.name} (${s.role || 'Family Senders'})`).join(", ");
 
-    return `You are an expert copywriter. Craft a highly personalized premium greeting card in a ${aiTone} tone for my beloved ${config.recipientName || 'recipient'} who is celebrating their ${config.age || '70'}th ${config.occasion || 'birthday'}.
+    return `You are an interactive expert copywriter and warm celebration consultant. Your goal is to draft a highly personalized, premium greeting card in a ${aiTone} tone for my beloved ${config.recipientName || 'recipient'} who is celebrating their ${config.age || '70'}th ${config.occasion || 'birthday'}.
 The card is sent by: ${signersList || 'Loving Family'}.
 
-Here are some additional facts/memories/traits about ${config.recipientName || 'them'} to weave into the messages:
-${aiFacts || '(No additional facts provided - write a universally beautiful, heartfelt message celebrating their life milestones)'}
+Here are the initial facts/memories/traits provided:
+${aiFacts || '(None provided yet)'}
 
-Generate a JSON object matching this structure. Follow these key copy rules:
-1. Make the text flow like a cohesive, poetic story, not generic greeting templates.
-2. Emphasize their wisdom, love, legacy, and the key facts mentioned above.
-3. Be highly creative. Avoid overly cheesy clichés. Keep it elegant.
+INSTRUCTIONS FOR INTERACTIVE MODE:
+1. Since most modern chat interfaces support multi-turn dialogue, if the facts provided above are sparse, or if you want to make this card truly extraordinary, please first ask me 3 or 4 engaging, thoughtful, and warm questions about ${config.recipientName || 'them'} (e.g., about their favorite hobbies, a classic family inside joke, an endearing personality quirk, or a key milestone).
+2. I will answer these questions in the next message. 
+3. Once I answer your questions (or if I tell you to proceed directly), craft the perfect copy and output the final configured JSON matching the schema below.
+4. If you already have rich details above, you may directly output the JSON, but always offer to refine it further if I provide more details.
 
-JSON SCHEMA:
+COPYWRITING STANDARDS:
+- Make the text flow like a cohesive, poetic story, not generic greeting templates.
+- Emphasize their wisdom, love, legacy, and the key facts discussed.
+- Be highly creative. Avoid overly cheesy clichés. Keep it premium, deep, and elegant.
+
+JSON SCHEMA TO GENERATE (After our conversation or immediately if rich facts are already present):
 {
   "landingTitle": "Happy ${config.age || '70'}th Birthday [Name]",
   "landingSubtitle": "[A short, elegant, warm subtitle inviting them to click to unlock their journey of memories. Keep it under 20 words.]",
@@ -420,7 +444,8 @@ JSON SCHEMA:
   "gallerySubtitle": "[A beautiful, loving subtitle for the gallery, e.g., 'A lifetime of memories, and so many more to make. Thank you for being you.']"
 }
 
-IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax (like \`\`\`json), explanations, or any other characters. Just plain valid JSON matching the schema above.`;
+IMPORTANT FOR THE FINAL JSON OUTPUT:
+When you output the final JSON, reply ONLY with the valid JSON. Do not include markdown code block syntax (like \`\`\`json), conversational filler, or explanations. It must be plain, parsable JSON matching the schema above so that I can copy-paste or upload it directly back to my editor.`;
   };
 
   const handleAIFilesUpload = (files) => {
@@ -533,6 +558,38 @@ IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax
     { id: "settings", label: "Settings", icon: Settings },
   ];
 
+  if (checkingCard) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-pink-500 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (!cardExists) {
+    return (
+      <div className="min-h-screen bg-[#07040d] text-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="absolute top-[-10%] left-[-10%] h-[40rem] w-[40rem] rounded-full bg-purple-600/10 blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] h-[40rem] w-[40rem] rounded-full bg-pink-600/10 blur-[120px] pointer-events-none" />
+        <div className="relative z-10 max-w-md space-y-6">
+          <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
+            <AlertCircle size={32} />
+          </div>
+          <h1 className="text-3xl font-extrabold tracking-tight">Card Not Found</h1>
+          <p className="text-sm text-gray-400 font-light leading-relaxed">
+            The celebration greeting card code <strong>"{cardId}"</strong> does not exist in our database yet. You cannot access or modify a non-existent card.
+          </p>
+          <button
+            onClick={() => router.push("/wish/create")}
+            className="w-full py-3.5 rounded-2xl font-bold bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md active:scale-95 transition-all text-sm"
+          >
+            Craft a New Surprise Card
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!authed) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center px-4">
@@ -546,14 +603,14 @@ IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax
               <Lock className="text-pink-400" size={24} />
             </div>
             <h1 className="text-2xl font-bold text-white text-center mb-1">Editor Panel</h1>
-            <p className="text-gray-400 text-sm text-center mb-6">Enter Card Passcode for "{cardId}"</p>
+            <p className="text-gray-400 text-sm text-center mb-6">Enter PIN or Passcode for "{cardId}"</p>
 
             <div className="relative mb-4">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter passcode"
+                placeholder="Enter PIN or Passcode (e.g., 123456)"
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-pink-500/50 transition-all pr-12 text-sm"
                 autoFocus
               />
@@ -977,8 +1034,9 @@ IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax
             <motion.div key="ai" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
               <Card title="AI Copywriter Assistant" icon={Sparkles}>
                 <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                  Use your favorite AI (Gemini, Claude, ChatGPT, etc.) to write highly personalized, emotionally resonant greeting card messages! 
-                  Just answer a few facts below, copy the prompt, and upload/paste the AI's generated response to instantly auto-fill all text fields.
+                  Use your favorite AI (Gemini, Claude, ChatGPT, etc.) as an interactive celebration consultant! 
+                  Simply copy our optimized prompt to start. The AI will ask you a few personalized questions about your recipient, allowing you to draft the perfect card interactively. 
+                  Once done, import the final JSON back to auto-fill all text fields.
                 </p>
 
                 <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1099,24 +1157,24 @@ IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax
 
           {tab === "settings" && (
             <motion.div key="settings" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
-              <Card title="Change Page Passcode" icon={Settings}>
-                <p className="text-sm text-gray-400 mb-4">Set a secure edit password to prevent unauthorized modifications to this greeting.</p>
-                <Field label="New Passcode (min 4 characters)">
+              <Card title="Change Page PIN / Passcode" icon={Settings}>
+                <p className="text-sm text-gray-400 mb-4">Set a secure 4 to 6 digit PIN or passcode to prevent unauthorized modifications to this greeting.</p>
+                <Field label="New Access PIN or Passcode (min 4 characters)">
                   <input
                     className={inputClass}
                     type="password"
-                    placeholder="Enter passcode"
+                    placeholder="Enter PIN or Passcode (e.g., 123456)"
                     onChange={e => updateField("newEditPassword", e.target.value)}
                   />
                 </Field>
                 <button
                   onClick={async () => {
                     if (!config.newEditPassword || config.newEditPassword.length < 4) {
-                      showToast("Passcode must be at least 4 characters", "error"); return;
+                      showToast("PIN or Passcode must be at least 4 characters", "error"); return;
                     }
                     const ok = await saveConfig({ newEditPassword: config.newEditPassword });
                     if (ok) {
-                      showToast("Passcode updated successfully! Relogging...");
+                      showToast("PIN / Passcode updated successfully! Relogging...");
                       setTimeout(() => { sessionStorage.clear(); window.location.reload(); }, 1800);
                     } else {
                       showToast("Failed to save new passcode", "error");
@@ -1124,7 +1182,7 @@ IMPORTANT: Reply ONLY with valid JSON. Do not include markdown code block syntax
                   }}
                   className="py-3 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-pink-500 to-purple-600 transition-all text-sm shadow-md"
                 >
-                  Update Passcode
+                  Update PIN / Passcode
                 </button>
               </Card>
             </motion.div>

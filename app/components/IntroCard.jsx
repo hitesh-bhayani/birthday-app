@@ -160,9 +160,9 @@ export default function IntroCard({ onStart }) {
               <p className="text-xs text-gray-400 uppercase tracking-widest mb-2">With all our love</p>
               <div className="flex flex-wrap justify-center gap-2">
                 {(config.signers || [
-                  { name: "Jhankar", role: "Daughter" },
-                  { name: "Hitesh", role: "Son-in-law" },
-                  { name: "Dhruv", role: "Grandson" },
+                  { name: "Pooja", role: "Daughter" },
+                  { name: "Amit", role: "Son-in-law" },
+                  { name: "Rohan", role: "Grandson" },
                 ]).map(({ name, role }, idx) => {
                   const colors = [
                     "from-pink-500/20 to-rose-500/20 border-pink-500/30 text-pink-300",
