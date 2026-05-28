@@ -65,7 +65,7 @@ export async function GET(request) {
 
     const files = await readdir(dirPath);
     let images = files
-      .filter((f) => f.match(/\.(png|jpe?g|gif|webp|svg)$/i))
+      .filter((f) => f.match(/\.(png|jpe?g|gif|webp|svg|heic|heif)$/i))
       .map((f) => `${publicPrefix}/${f}`);
 
     const order = getImagesOrder(cardId);

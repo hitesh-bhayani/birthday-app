@@ -318,23 +318,65 @@ export default function WishEditPage() {
     setSaving(false);
   };
 
+  // ── Client-side image compression ───────────────────────────────────────────
+  // Compresses mobile photos (10-15MB) down to ~500KB before upload.
+  // Prevents Railway proxy body-size rejections and speeds up uploads on mobile.
+  const compressImage = (file) => new Promise((resolve) => {
+    const MAX_PX = 1920;  // max width or height
+    const QUALITY = 0.85; // JPEG quality
+
+    const img = new window.Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let { width, height } = img;
+
+      // Scale down if larger than MAX_PX
+      if (width > MAX_PX || height > MAX_PX) {
+        if (width > height) { height = Math.round(height * MAX_PX / width); width = MAX_PX; }
+        else                { width = Math.round(width * MAX_PX / height);  height = MAX_PX; }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })),
+        'image/jpeg',
+        QUALITY
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); }; // fallback: use original
+    img.src = url;
+  });
+
   const handlePhotoUpload = async (files) => {
     if (!files?.length) return;
     setUploading(true);
-    const fd = new FormData();
-    Array.from(files).forEach(f => fd.append("files", f));
-    const res = await fetch(`/api/upload/photos?cardId=${cardId}`, { method: "POST", body: fd });
-    const data = await res.json();
-    if (data.success) {
-      const updatedImages = [...images, ...data.saved];
-      setImages(updatedImages);
-      setConfig(c => ({
-        ...c,
-        imagesOrder: updatedImages
-      }));
-      showToast(`${data.saved.length} photo(s) uploaded!`);
-    } else {
-      showToast("Upload failed", "error");
+    try {
+      // Compress all images client-side before uploading
+      const compressed = await Promise.all(Array.from(files).map(compressImage));
+
+      const fd = new FormData();
+      compressed.forEach(f => fd.append("files", f));
+      const res = await fetch(`/api/upload/photos?cardId=${cardId}`, { method: "POST", body: fd });
+      const data = await res.json();
+      if (data.success) {
+        const updatedImages = [...images, ...data.saved];
+        setImages(updatedImages);
+        setConfig(c => ({
+          ...c,
+          imagesOrder: updatedImages
+        }));
+        showToast(`${data.saved.length} photo(s) uploaded!`);
+      } else {
+        showToast("Upload failed", "error");
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      showToast("Upload failed — please try again", "error");
     }
     setUploading(false);
   };
