@@ -3,7 +3,9 @@ import { existsSync, readFileSync } from 'fs';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-  const { filename } = params;
+  // In Next.js 15+, params is a Promise and must be awaited
+  const resolvedParams = await params;
+  const { filename } = resolvedParams;
   
   // Prevent directory traversal
   const safeFilename = filename.replace(/\.\./g, "");

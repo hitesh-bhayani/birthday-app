@@ -3,9 +3,14 @@ import { existsSync, readFileSync } from 'fs';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-  // params.path is an array of route segments (e.g. ['pappa-70', 'images', 'image.jpg'])
-  const pathParts = params.path;
+  // In Next.js 15+, params is a Promise and must be awaited
+  const resolvedParams = await params;
+  const pathParts = resolvedParams.path;
   
+  if (!pathParts) {
+    return new NextResponse('Bad Request', { status: 400 });
+  }
+
   // Reconstruct path and prevent directory traversal
   const safePath = pathParts.join('/').replace(/\.\./g, "");
   const filePath = join(process.cwd(), 'storage', 'uploads', safePath);
