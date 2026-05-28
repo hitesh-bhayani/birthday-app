@@ -1227,6 +1227,69 @@ When you output the final JSON, reply ONLY with the valid JSON. Do not include m
                   Update PIN / Passcode
                 </button>
               </Card>
+
+              <Card title="Danger Zone: Delete Card" icon={Trash2}>
+                <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-5 space-y-4">
+                  <p className="text-sm text-red-200">
+                    <strong>Warning:</strong> Deleting this wish card is permanent and cannot be undone. This will permanently delete:
+                  </p>
+                  <ul className="list-disc list-inside text-xs text-gray-400 space-y-1 pl-2">
+                    <li>The configuration and text content of this greeting card</li>
+                    <li>All custom uploaded gallery images and camera captures</li>
+                    <li>Any recorded or uploaded voice notes</li>
+                  </ul>
+                  
+                  <div className="pt-2">
+                    <p className="text-xs text-gray-400 mb-2 font-medium">Type the card name <code className="text-red-300 bg-red-500/10 px-1.5 py-0.5 rounded font-mono font-bold">{cardId}</code> to confirm deletion:</p>
+                    <input
+                      className={`${inputClass} border-red-500/20 focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30`}
+                      type="text"
+                      placeholder={`Type "${cardId}" here`}
+                      id="delete-confirm-input"
+                    />
+                  </div>
+
+                  <button
+                    onClick={async () => {
+                      const inputElement = document.getElementById("delete-confirm-input");
+                      const inputVal = inputElement ? inputElement.value : "";
+                      if (inputVal !== cardId) {
+                        showToast("Please type the card name correctly to confirm deletion.", "error");
+                        return;
+                      }
+                      
+                      if (!confirm("Are you absolutely sure you want to permanently delete this greeting card? This action is irreversible.")) {
+                        return;
+                      }
+
+                      const pw = sessionStorage.getItem(`edit_password_${cardId}`) || "";
+                      try {
+                        const res = await fetch(`/api/config?cardId=${cardId}`, {
+                          method: "DELETE",
+                          headers: { "x-admin-password": pw }
+                        });
+
+                        if (res.ok) {
+                          showToast("Card deleted successfully! Redirecting...");
+                          sessionStorage.removeItem(`authed_${cardId}`);
+                          sessionStorage.removeItem(`edit_password_${cardId}`);
+                          setTimeout(() => {
+                            window.location.href = "/";
+                          }, 2000);
+                        } else {
+                          const errData = await res.json().catch(() => ({}));
+                          showToast(errData.error || "Failed to delete card.", "error");
+                        }
+                      } catch (err) {
+                        showToast("Network error. Failed to delete card.", "error");
+                      }
+                    }}
+                    className="py-3 px-6 rounded-xl font-semibold text-white bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 transition-all text-sm shadow-md"
+                  >
+                    Permanently Delete Card
+                  </button>
+                </div>
+              </Card>
             </motion.div>
           )}
         </AnimatePresence>

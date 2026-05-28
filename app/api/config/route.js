@@ -1,5 +1,6 @@
 // app/api/config/route.js
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { unlink, rm } from "fs/promises";
 import { join } from "path";
 import { createHash } from "crypto";
 
@@ -122,5 +123,47 @@ export async function POST(request) {
   } catch (error) {
     console.error("Config POST error:", error);
     return Response.json({ error: "Failed to save config" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const cardId = searchParams.get("cardId");
+    const password = request.headers.get("x-admin-password");
+
+    if (!cardId || cardId === "default") {
+      return Response.json({ error: "Cannot delete default config" }, { status: 400 });
+    }
+
+    const path = getFilePath(cardId);
+    let existing = readConfig(cardId);
+    if (!existing) {
+      return Response.json({ error: "Card not found" }, { status: 404 });
+    }
+
+    // Verify password
+    const activePassword = existing.editPassword || existing.adminPassword || "birthday2024";
+    if (!verifyPassword(password, activePassword)) {
+      await new Promise(resolve => setTimeout(resolve, 350));
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Delete the config file
+    if (existsSync(path)) {
+      await unlink(path);
+    }
+
+    // Delete the uploaded assets folder (recursively)
+    const safeId = cardId.replace(/[^a-zA-Z0-9_-]/g, "");
+    const uploadsDir = join(process.cwd(), 'public', 'uploads', safeId);
+    if (existsSync(uploadsDir)) {
+      await rm(uploadsDir, { recursive: true, force: true });
+    }
+
+    return Response.json({ success: true });
+  } catch (error) {
+    console.error("Config DELETE error:", error);
+    return Response.json({ error: "Failed to delete card" }, { status: 500 });
   }
 }
