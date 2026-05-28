@@ -31,12 +31,19 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY data ./data
 COPY birthday.config.json ./birthday.config.json
 
-# Create writable directories for runtime uploads (images uploaded via admin panel)
-RUN mkdir -p public/uploads public/voice-notes public/original_images data/wishes && \
+# Copy startup script (handles symlinks to persistent volume on every boot)
+COPY scripts/start.sh ./start.sh
+RUN chmod +x ./start.sh
+
+# Create placeholder dirs (will be replaced by symlinks to /app/storage on start)
+# /app/storage is where the Railway Volume should be mounted
+RUN mkdir -p public/uploads public/voice-notes public/original_images data/wishes storage && \
     chown -R nextjs:nodejs /app
 
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# Use startup script so persistent volume symlinks are set up before server starts
+CMD ["sh", "/app/start.sh"]
+
