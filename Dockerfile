@@ -27,9 +27,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
-# Copy data directories (wish cards, uploads)
-COPY --from=builder /app/data ./data
-COPY --from=builder /app/birthday.config.json ./birthday.config.json
+# Copy data directories and config directly from build context (more reliable than --from=builder)
+COPY data ./data
+COPY birthday.config.json ./birthday.config.json
 
 # Create writable directories for runtime uploads
 RUN mkdir -p public/uploads public/voice-notes data/wishes && \
