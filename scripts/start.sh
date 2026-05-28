@@ -8,37 +8,47 @@ set -e
 
 STORAGE=/app/storage
 
-# ── Create persistent subdirectories on the volume ──
-mkdir -p "$STORAGE/original_images"
-mkdir -p "$STORAGE/uploads"
-mkdir -p "$STORAGE/voice-notes"
-mkdir -p "$STORAGE/wishes"
+# Helper function to initialize persistent directory by copying baked-in files
+init_volume_dir() {
+  SRC="$1"
+  DEST="$2"
 
-# ── Symlink public media directories to the persistent volume ──
-# Remove the empty dirs created by Docker and replace with symlinks
+  # Create the destination directory on the volume if it doesn't exist
+  mkdir -p "$DEST"
 
-if [ ! -L /app/public/original_images ]; then
-  rm -rf /app/public/original_images
-  ln -s "$STORAGE/original_images" /app/public/original_images
-fi
+  # If the source exists, is a real directory (not a symlink)
+  if [ -d "$SRC" ] && [ ! -L "$SRC" ]; then
+    echo "Initializing persistent directory $DEST with default files from $SRC..."
+    
+    # Copy files that don't already exist in DEST (POSIX-compatible loop)
+    for item in "$SRC"/*; do
+      if [ -e "$item" ]; then
+        name=$(basename "$item")
+        if [ ! -e "$DEST/$name" ]; then
+          echo "-> Copying $name to persistent storage..."
+          cp -Rf "$item" "$DEST/" 2>/dev/null || true
+        fi
+      fi
+    done
+    
+    # Remove the source directory
+    rm -rf "$SRC"
+  fi
 
-if [ ! -L /app/public/uploads ]; then
-  rm -rf /app/public/uploads
-  ln -s "$STORAGE/uploads" /app/public/uploads
-fi
+  # Create symlink if it doesn't exist yet
+  if [ ! -L "$SRC" ]; then
+    ln -s "$DEST" "$SRC"
+    echo "Linked $SRC -> $DEST"
+  fi
+}
 
-if [ ! -L /app/public/voice-notes ]; then
-  rm -rf /app/public/voice-notes
-  ln -s "$STORAGE/voice-notes" /app/public/voice-notes
-fi
+# ── Initialize and Symlink directories to the persistent volume ──
+init_volume_dir "/app/data/wishes" "$STORAGE/wishes"
+init_volume_dir "/app/public/original_images" "$STORAGE/original_images"
+init_volume_dir "/app/public/uploads" "$STORAGE/uploads"
+init_volume_dir "/app/public/voice-notes" "$STORAGE/voice-notes"
 
-# ── Symlink wish card data directory ──
-if [ ! -L /app/data/wishes ]; then
-  rm -rf /app/data/wishes
-  ln -s "$STORAGE/wishes" /app/data/wishes
-fi
-
-echo "✅ Persistent storage symlinks ready at $STORAGE"
+echo "✅ Persistent storage symlinks and data initialization ready at $STORAGE"
 
 # ── Start the Next.js server ──
 exec node /app/server.js
