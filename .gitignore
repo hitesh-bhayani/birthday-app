@@ -40,6 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# private family celebration data - kept in git for deployment
+# private family celebration data - images uploaded via admin panel
 /public/uploads/
+/public/original_images/
+/public/voice-notes/
 

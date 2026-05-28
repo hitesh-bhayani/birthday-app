@@ -31,8 +31,8 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY data ./data
 COPY birthday.config.json ./birthday.config.json
 
-# Create writable directories for runtime uploads
-RUN mkdir -p public/uploads public/voice-notes data/wishes && \
+# Create writable directories for runtime uploads (images uploaded via admin panel)
+RUN mkdir -p public/uploads public/voice-notes public/original_images data/wishes && \
     chown -R nextjs:nodejs /app
 
 USER nextjs
