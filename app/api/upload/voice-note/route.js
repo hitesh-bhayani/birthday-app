@@ -1,5 +1,5 @@
 // app/api/upload/voice-note/route.js
-import { writeFileSync, mkdirSync } from "fs";
+import { writeFileSync, mkdirSync, existsSync, readdirSync, unlinkSync } from "fs";
 import { join } from "path";
 
 export async function POST(request) {
@@ -14,18 +14,38 @@ export async function POST(request) {
       return Response.json({ error: "No file provided" }, { status: 400 });
     }
 
-    let filePath = join(process.cwd(), "public", "voice-notes", "message.mp3");
-    let publicUrl = "/voice-notes/message.mp3";
+    // Get correct extension from uploaded file
+    const originalName = file.name || "voice.webm";
+    const extension = originalName.split(".").pop().toLowerCase();
+
+    let dirPath = join(process.cwd(), "public", "voice-notes");
+    let filePath = join(dirPath, `message.${extension}`);
+    let publicUrl = `/voice-notes/message.${extension}`;
 
     if (cardId && cardId !== "default") {
       const safeId = cardId.replace(/[^a-zA-Z0-9_-]/g, "");
       const dir = join(process.cwd(), "public", "uploads", safeId, "audio");
+      dirPath = dir;
       mkdirSync(dir, { recursive: true });
-      filePath = join(dir, "voice.mp3");
-      publicUrl = `/uploads/${safeId}/audio/voice.mp3`;
+      filePath = join(dir, `voice.${extension}`);
+      publicUrl = `/uploads/${safeId}/audio/voice.${extension}`;
     } else {
-      const dir = join(process.cwd(), "public", "voice-notes");
-      mkdirSync(dir, { recursive: true });
+      mkdirSync(dirPath, { recursive: true });
+    }
+
+    // Clean up any existing audio files starting with the same prefix to avoid playback conflicts
+    if (existsSync(dirPath)) {
+      const prefix = cardId && cardId !== "default" ? "voice." : "message.";
+      const existingFiles = readdirSync(dirPath);
+      for (const f of existingFiles) {
+        if (f.startsWith(prefix)) {
+          try {
+            unlinkSync(join(dirPath, f));
+          } catch (err) {
+            console.warn("Could not delete old audio file:", f, err);
+          }
+        }
+      }
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

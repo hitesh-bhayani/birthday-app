@@ -102,6 +102,7 @@ export default function WishEditPage() {
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [audioChunks, setAudioChunks] = useState([]);
   const recTimerRef = useRef(null);
+  const rawAudioStreamRef = useRef(null);
 
   const showToast = (message, type = "success") => setToast({ message, type });
 
@@ -175,7 +176,54 @@ export default function WishEditPage() {
     setRecDuration(0);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      rawAudioStreamRef.current = stream;
+      
+      // Create Web Audio API pipeline for real-time DSP (noise filtering + boost)
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const audioCtx = new AudioCtx();
+      const source = audioCtx.createMediaStreamSource(stream);
+
+      // 1. High-pass filter (cuts low AC rumble/hum below 110Hz)
+      const hpFilter = audioCtx.createBiquadFilter();
+      hpFilter.type = "highpass";
+      hpFilter.frequency.value = 110;
+
+      // 2. Low-pass filter (cuts high-frequency hiss/static above 4000Hz)
+      const lpFilter = audioCtx.createBiquadFilter();
+      lpFilter.type = "lowpass";
+      lpFilter.frequency.value = 4000;
+
+      // 3. Gain node (volume booster)
+      const gainNode = audioCtx.createGain();
+      gainNode.gain.value = config.voiceVolumeBoost ?? 2.0; // Dynamic boost from configuration settings
+
+      // Connect DSP chain
+      source.connect(hpFilter);
+      hpFilter.connect(lpFilter);
+      lpFilter.connect(gainNode);
+
+      // Create destination node to stream processed audio to MediaRecorder
+      const destination = audioCtx.createMediaStreamDestination();
+      gainNode.connect(destination);
+
+      // Negotiate best supported MIME type
+      const mimeTypes = [
+        "audio/mp4",
+        "audio/aac",
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg",
+        "audio/wav"
+      ];
+      let options = {};
+      for (const mime of mimeTypes) {
+        if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(mime)) {
+          options = { mimeType: mime };
+          break;
+        }
+      }
+
+      const recorder = new MediaRecorder(destination.stream, options);
       setMediaRecorder(recorder);
       
       const chunks = [];
@@ -186,12 +234,26 @@ export default function WishEditPage() {
       };
 
       recorder.onstop = async () => {
-        // Stop all media tracks to release microphone
+        // Stop both processed and raw stream tracks to release microphone
+        destination.stream.getTracks().forEach(t => t.stop());
         stream.getTracks().forEach(t => t.stop());
+        rawAudioStreamRef.current = null;
         
-        const blob = new Blob(chunks, { type: "audio/webm" });
-        const file = new File([blob], "voice.mp3", { type: "audio/webm" });
+        // Close audio context
+        audioCtx.close().catch(() => {});
         
+        const mimeType = recorder.mimeType || "audio/webm";
+        const blob = new Blob(chunks, { type: mimeType });
+        
+        // Map MIME type to correct file extension
+        let extension = "webm";
+        if (mimeType.includes("mp4")) extension = "m4a";
+        else if (mimeType.includes("aac")) extension = "aac";
+        else if (mimeType.includes("mpeg") || mimeType.includes("mp3")) extension = "mp3";
+        else if (mimeType.includes("ogg")) extension = "ogg";
+        else if (mimeType.includes("wav")) extension = "wav";
+
+        const file = new File([blob], `voice.${extension}`, { type: mimeType });
         await handleVoiceUpload(file);
       };
 
@@ -223,6 +285,10 @@ export default function WishEditPage() {
         mediaRecorder.stop();
         // Stop tracks
         mediaRecorder.stream.getTracks().forEach(t => t.stop());
+        if (rawAudioStreamRef.current) {
+          rawAudioStreamRef.current.getTracks().forEach(t => t.stop());
+          rawAudioStreamRef.current = null;
+        }
         showToast("Recording discarded");
       }
     }
@@ -233,6 +299,10 @@ export default function WishEditPage() {
   useEffect(() => {
     return () => {
       if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+      if (rawAudioStreamRef.current) {
+        rawAudioStreamRef.current.getTracks().forEach(t => t.stop());
+        rawAudioStreamRef.current = null;
+      }
       if (recTimerRef.current) clearInterval(recTimerRef.current);
     };
   }, [cameraStream]);
@@ -582,6 +652,30 @@ When you output the final JSON, reply ONLY with the valid JSON. Do not include m
       showToast("Upload failed", "error");
     }
     setUploading(false);
+  };
+
+  const handleDeleteVoiceNote = async () => {
+    if (!confirm("Are you sure you want to permanently delete this voice note?")) return;
+    try {
+      const res = await fetch(`/api/voice-note?cardId=${cardId}`, {
+        method: "DELETE",
+        headers: { 
+          "x-admin-password": getCardPassword() 
+        }
+      });
+      if (res.ok) {
+        updateField("voiceNotePath", "");
+        showToast("Voice note deleted successfully!");
+        if (voicePlaying) {
+          voiceRef.current?.pause();
+          setVoicePlaying(false);
+        }
+      } else {
+        showToast("Failed to delete voice note", "error");
+      }
+    } catch {
+      showToast("Error deleting voice note", "error");
+    }
   };
 
   const updateSigner = (idx, field, value) => {
@@ -1009,8 +1103,36 @@ When you output the final JSON, reply ONLY with the valid JSON. Do not include m
                       <p className="text-sm text-white font-medium truncate">{config.voiceNotePath.split("/").pop()}</p>
                       <p className="text-xs text-gray-400">{voicePlaying ? "Playing message..." : "Click to preview voice note"}</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={handleDeleteVoiceNote}
+                      className="ml-auto p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors shrink-0"
+                      title="Delete Voice Note"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 )}
+
+                {/* Volume Boost Control */}
+                <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="text-left flex-1">
+                    <p className="text-sm font-semibold text-white">Mic Volume Boost Factor</p>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Boost your microphone volume level dynamically during browser recording to make it loud and clear.</p>
+                  </div>
+                  <div className="flex items-center gap-3 w-full sm:w-44 shrink-0 mt-1 sm:mt-0">
+                    <input
+                      type="range"
+                      min="1.0"
+                      max="4.0"
+                      step="0.5"
+                      value={config.voiceVolumeBoost ?? 2.0}
+                      onChange={(e) => updateField("voiceVolumeBoost", parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-pink-500"
+                    />
+                    <span className="text-xs font-mono font-bold text-pink-400 w-8 text-right">{(config.voiceVolumeBoost ?? 2.0).toFixed(1)}x</span>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* File Upload Zone */}
